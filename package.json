@@ -1,7 +1,7 @@
 {
   "name": "nihonco-jp",
   "version": "0.7.15",
-  "description": "Live2D 日语口语搭子：本地语音识别 + 云端 LLM + VOICEVOX 小夜声线",
+  "description": "Live2D 日语语音对话学习桌宠：本地语音识别 + 云端 LLM + VOICEVOX 小夜声线",
   "main": "main.js",
   "scripts": {
     "start": "electron main.js --no-sandbox",
