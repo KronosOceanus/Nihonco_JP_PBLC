@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞
+    url: https://github.com/KronosOceanus/Nihonco_JP/security/advisories/new
+    about: 请勿公开报告安全问题

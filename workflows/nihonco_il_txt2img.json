@@ -1,0 +1,98 @@
+{
+  "last_node_id": 7,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "CheckpointLoaderSimple",
+      "pos": [40, 120],
+      "size": [320, 100],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "properties": {"Node name for S&R": "CheckpointLoaderSimple"},
+      "widgets_values": ["Illustrious-XL-v0.1.safetensors"]
+    },
+    {
+      "id": 2,
+      "type": "CLIPTextEncode",
+      "pos": [400, 80],
+      "size": [430, 220],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "widgets_values": ["masterpiece, best quality, very aesthetic, absurdres, highres, 1girl, solo, 24 years old, mature female, japanese teacher, medium-long dark brown hair, side part, wavy hair, warm amber eyes, straight eyebrows, closed mouth, gentle smile, confident expression, upright posture, looking at viewer, cream shirt, navy cropped blazer, loose navy necktie, navy trousers, small square enamel hairpin on left side of hair, navy and cream hairpin, classroom, window, sunlight, soft shadows, upper body, depth of field"]
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [400, 340],
+      "size": [430, 220],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "widgets_values": ["lowres, worst quality, low quality, normal quality, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, jpeg artifacts, watermark, signature, username, text, error, blurry, multiple views, character sheet, 2girls, nsfw, child, loli, glasses, cat ears, animal ears, bell, choker, frills, military uniform"]
+    },
+    {
+      "id": 4,
+      "type": "EmptyLatentImage",
+      "pos": [400, 600],
+      "size": [320, 110],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "properties": {"Node name for S&R": "EmptyLatentImage"},
+      "widgets_values": [832, 1216, 1]
+    },
+    {
+      "id": 5,
+      "type": "KSampler",
+      "pos": [880, 120],
+      "size": [320, 260],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "properties": {"Node name for S&R": "KSampler"},
+      "widgets_values": [1234567890, "fixed", 30, 6, "euler_ancestral", "normal", 1]
+    },
+    {
+      "id": 6,
+      "type": "VAEDecode",
+      "pos": [1240, 120],
+      "size": [220, 60],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "properties": {"Node name for S&R": "VAEDecode"},
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "SaveImage",
+      "pos": [1240, 220],
+      "size": [420, 420],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "properties": {"Node name for S&R": "SaveImage"},
+      "widgets_values": ["Nihonco_IL"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 5, 0, "MODEL"],
+    [2, 1, 1, 2, 0, "CLIP"],
+    [3, 1, 1, 3, 0, "CLIP"],
+    [4, 2, 0, 5, 1, "CONDITIONING"],
+    [5, 3, 0, 5, 2, "CONDITIONING"],
+    [6, 4, 0, 5, 3, "LATENT"],
+    [7, 5, 0, 6, 0, "LATENT"],
+    [8, 6, 0, 7, 0, "IMAGE"],
+    [9, 1, 2, 6, 1, "VAE"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {"ds": {"scale": 1, "offset": [0, 0]}},
+  "version": 0.4
+}

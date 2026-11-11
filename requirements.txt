@@ -1,0 +1,4 @@
+# Python 依赖（语音识别）
+# 安装：python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+mlx-whisper==0.4.3
+numpy>=2.0

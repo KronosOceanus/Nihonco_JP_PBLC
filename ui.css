@@ -1,0 +1,90 @@
+/* 共用设计令牌 —— pet.html 与 settings.html 都引这一份
+ *
+ * 之前两个窗口各写各的：圆角有 7/8/9/10/12/14/17px 六种、字号 10.5~15px 十档、
+ * 底色十几个手写 rgba。统一到这里，改样式只改这一处。
+ */
+:root {
+  /* ---- 圆角 ---- */
+  --r-xs: 8px;      /* 小标签、输入框 */
+  --r-sm: 10px;     /* 黄卡、提示条 */
+  --r-md: 12px;     /* 气泡 */
+  --r-lg: 16px;     /* 设置窗口分组 */
+  --r-pill: 999px;  /* 胶囊按钮 */
+
+  /* ---- 底色 / 描边 ---- */
+  --bg-app: #151a24;
+  --surface-0: rgba(18, 24, 38, 0.72);      /* 输入框、普通按钮 */
+  --surface-1: rgba(14, 20, 34, 0.95);      /* 浮层（菜单、提示） */
+  --surface-2: rgba(22, 28, 44, 0.88);      /* 气泡 */
+  --border: rgba(140, 170, 220, 0.28);
+  --border-strong: rgba(150, 190, 255, 0.55);
+  --border-soft: rgba(140, 170, 220, 0.22);   /* 气泡等更轻的描边 */
+  --tooltip-border: rgba(140, 175, 225, 0.35);
+  --shadow: rgba(0, 0, 0, 0.35);
+  --shadow-strong: rgba(0, 0, 0, 0.5);
+  /* 轻量背景/描边（进度条、回显、按钮底色） */
+  --tint-weak: rgba(200, 220, 255, 0.10);
+  --tint-soft: rgba(200, 220, 255, 0.22);
+  --tint-line: rgba(110, 150, 210, 0.2);
+  --tint-fill: rgba(120, 160, 220, 0.16);
+  /* 常驻面板 */
+  --surface-bubble: rgba(18, 24, 38, 0.82);
+  --surface-echo: rgba(20, 28, 46, 0.66);
+
+  /* ---- 文字 ---- */
+  --text: #e8efff;
+  --text-dim: #9fb2cc;
+  --text-faint: #6f7f99;
+  --text-accent: #8fb4ff;   /* 数值、可点文本 */
+
+  /* 激活态按钮上的文字（深色，压在 --accent-pale 上） */
+  --text-on-accent: rgba(20, 28, 42, 0.72);
+
+  /* ---- 强调色 ---- */
+  --accent: #3d6bd8;
+  --accent-strong: #4d7ff0;
+  --accent-soft: rgba(70, 110, 200, 0.55);
+  --accent-pale: rgba(168, 205, 255, 0.92);   /* 选中的胶囊按钮 */
+  --accent-line: rgba(90, 130, 190, 0.35);
+  --ok: #7ee2a8;
+  --warn: #ffcf8a;
+  /* 朗读高亮（卡片里标记"会被念出来"的那段） */
+  --hl-bg: rgba(255, 226, 150, 0.20);
+  --hl-line: rgba(255, 226, 150, 0.16);
+
+  /* 黄卡（纠错/讲解） */
+  --note-bg: rgba(40, 30, 12, 0.86);
+  --note-border: rgba(230, 190, 120, 0.35);
+  --note-text: #ffe9c8;
+  /* 录音取消态（红） */
+  --danger-bg: rgba(220, 70, 90, 0.85);
+  --danger-border: rgba(255, 130, 140, 0.95);
+  --danger-soft: rgba(255, 150, 160, 0.9);
+  --danger-line: rgba(200, 70, 80, 0.9);
+  /* 危险操作按钮（清空数据） */
+  --danger-btn-border: #7a3b46;
+  --danger-btn-text: #ffb3bd;
+  /* 其他微调 */
+  --text-bright: rgba(230, 240, 255, 0.55);
+  --text-muted: rgba(190, 210, 240, 0.8);
+  --text-soft: rgba(180, 200, 230, 0.75);
+  --text-echo: #9fc0ea;
+  --text-hint: #c9d8f0;
+  --text-active: rgba(210, 230, 255, 0.95);
+
+  /* ---- 字号 ---- */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+
+  /* ---- 间距 ---- */
+  --sp-1: 6px;
+  --sp-2: 10px;
+  --sp-3: 14px;
+  --sp-4: 20px;
+
+  /* ---- 字体 ---- */
+  --font-ui: -apple-system, "PingFang SC", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}

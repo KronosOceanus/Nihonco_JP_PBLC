@@ -1,0 +1,71 @@
+# 依赖
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# 大文件 / 可重新生成
+.hf-cache/
+.voicevox/
+.aivis/
+lib/
+.whisper/
+.electron-data/
+.electron-cache/
+.npm-cache/
+.voice/
+dist/
+
+# 密钥
+.env
+
+# 日志
+*.log
+npm-debug.log*
+Nihonco.app/
+
+# 系统
+.DS_Store
+
+# 课程模式的运行状态（简单模式不写；用 WORD_COURSE=1 时本地生成）
+data/curriculum.json
+data/wordbook.json
+data/vocab-daily.json
+data/settings.json
+# 例句缓存：种子进仓库，本地新增不进
+data/enrich-cache.json
+
+data/wordbook.baseline.json
+data/wordbook.log.jsonl
+data/wordbook.log.1.jsonl
+data/patternbook.json
+data/pattern-daily.json
+
+data/patternbook.baseline.json
+data/patternbook.log.jsonl
+data/patternbook.log.1.jsonl
+data/backup/
+data/issues.log
+data/issues.log.*
+data/logs/
+
+# 第三方 Live2D 模型（版权归原作者，个人使用，不进仓库）
+/model/
+data/live2d-models.json
+data/window.json
+data/shortcuts.json
+data/usage.json
+
+# 长期记忆 / 人格资料（含真实个人信息，绝不入库）
+data/persona*.json
+data/memory*.json
+data/persona/
+data/memory/
+
+/lib/live2dcubismcore.min.js
+
+/assets/model/
+/assets/lib/
+
+# 内部临时文档
+tmp_*.md

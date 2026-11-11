@@ -1,0 +1,15 @@
+{
+  "_note": "两个 ASR 后端必须共同满足的 HTTP 契约（mlx / whisper.cpp）",
+  "ports": { "default": 8765 },
+  "health": {
+    "required": ["ok", "model", "requested", "fallback", "ready"],
+    "types": { "ok": "boolean", "fallback": "boolean", "ready": "boolean" },
+    "optional": ["engine", "modelNote", "modelFallback", "modelFile"]
+  },
+  "asr": {
+    "required": ["text", "ms", "lang", "dur"],
+    "types": { "text": "string", "ms": "number", "lang": "string" },
+    "promptParam": "prompt",
+    "langParam": "lang"
+  }
+}

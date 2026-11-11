@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false            # 一个平台失败也把另一个跑完，方便对比
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # 排查用：把实际用的 Node/npm 和测试命令打出来（CI 失败时一眼看到跑的是什么）
+      - name: env info
+        run: |
+          node -v
+          npm -v
+          npm pkg get scripts.test
+
+      # 行为测试：全部用临时数据目录（tests/_env.mjs 会断言 NIHONCO_DATA_DIR 在 tmp 下）
+      - run: npm test
+
+      # 结构扫描：[2] IPC 通道 / [7] DOM id / [10] CSP / [11] 打包覆盖 / [12] 注入边界…
+      - run: npm run scan
+
+      # 冒烟需要 Electron 图形界面，CI 里先跳过（本地 npm run smoke）
+      #
+      # Windows job 能抓到：路径分隔符、tar/bsdtar、taskkill、进程/端口、IS_WIN 分支、
+      # GPU 安装器的文件操作（测试用假 zip，无需真显卡）。
+      # 抓不到：CUDA 实际加速、驱动版本判断、Electron UI —— 只能在真机验。

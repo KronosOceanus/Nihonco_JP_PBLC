@@ -1,0 +1,5 @@
+# 统一用 LF，避免 Windows 端整文件重写（曾把 .gitignore 变成 CRLF 全量 diff）
+* text=auto eol=lf
+*.png binary
+*.icns binary
+*.wav binary

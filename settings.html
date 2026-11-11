@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'none'" />
+<link rel="stylesheet" href="ui.css" />
+<title>Nihonco 設定</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 22px 26px 18px;
+    font: var(--fs-md)/1.6 var(--font-ui);
+    background: var(--bg-app); color: var(--text);
+    -webkit-user-select: none;
+  }
+  h1 { font-size: 15px; margin: 0 0 18px; font-weight: 600; letter-spacing: .02em; }
+  h1 small { font-weight: 400; color: var(--text-faint); margin-left: 8px; font-size: var(--fs-xs); }
+  section { margin: 0 0 4px; }
+  /* 快捷键：全局 / 窗口内 两列横排 */
+  .alts-item { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+  .alts-word { color: var(--text); min-width: 88px; }
+  .alts-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px;
+    border: 1px solid var(--border-strong); border-radius: 999px; font-size: 11px; color: var(--text-muted); }
+  .alts-chip button { border: 0; background: transparent; color: var(--text-dim); cursor: pointer; padding: 0 2px; font-size: 12px; }
+  .alts-chip button:hover { color: #ff8a8a; }
+  .alts-add { width: 96px; }
+  .mem-group { margin: 10px 0 14px; }
+  .mem-head { font-size: 12px; color: var(--text-dim); margin: 0 0 5px; }
+  .mem-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 5px 0; font-size: 12px; }
+  .mem-key { color: var(--text-dim); min-width: 52px; }
+  .mem-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px;
+    border: 1px solid var(--border-strong); border-radius: 999px; font-size: 11px; color: var(--text-muted); }
+  .mem-chip button { border: 0; background: transparent; color: var(--text-dim); cursor: pointer; padding: 0 2px; }
+  .mem-chip button:hover { color: #ff8a8a; }
+  .mem-add { width: 100px; }
+  .mem-ep { border-top: 1px solid var(--border); padding: 8px 0; font-size: 12px; }
+  .mem-ep:first-child { border-top: 0; }
+  .mem-ep-meta { color: var(--text-faint); font-size: 11px; }
+  .mem-ep-summary { color: var(--text); margin: 2px 0; }
+  .mem-ep-tags { color: var(--text-dim); font-size: 11px; }
+  .mem-ep-actions { display: flex; gap: 6px; margin-top: 4px; }
+  .mem-ep-actions button { padding: 2px 8px; font-size: 11px; }
+          .asset-stat { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .dir-path { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asset-link { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
+  .asset-link:hover { color: var(--text); }
+  .mini { font-size: 11px; color: var(--text-dim); margin-left: 6px; white-space: nowrap; }
+  .sc-cols { display: flex; gap: 14px; align-items: flex-start; }
+  .sc-col { flex: 1 1 0; min-width: 0; }
+  .sc-col .sc-head { font-size: 12px; color: var(--text-dim); margin: 6px 0 4px; }
+  .sc-col .row { margin: 5px 0; gap: 8px; }
+  /* 标签定宽：按键能对齐，又不会把按键推到最右边 */
+  .sc-col .row label { font-size: 12px; flex: 0 0 104px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sc-col .row .pill { font-size: 11px; padding: 2px 7px; white-space: nowrap; }
+  .sc-col .row button { padding: 2px 8px; font-size: 12px; white-space: nowrap; }
+
+  .section-title {
+    font-size: var(--fs-xs); font-weight: 600; letter-spacing: .08em;
+    color: var(--text-dim); margin: 18px 0 6px;
+  }
+  section:first-of-type .section-title { margin-top: 4px; }
+  .sep { border: none; border-top: 1px solid var(--border); margin: 16px 0 0; }
+  .row { display: flex; align-items: center; gap: 12px; margin: 10px 0; min-width: 0; }
+  .row > label { width: 96px; flex: 0 0 auto; color: var(--text-dim); font-size: var(--fs-sm); }
+  .row > .val { width: 46px; text-align: right; color: var(--text-accent); font-variant-numeric: tabular-nums; font-size: var(--fs-sm); }
+  select, input[type=range] { flex: 1 1 0; min-width: 0; }
+  .row > button { flex: 0 0 auto; }
+  select {
+    appearance: none; background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r-xs); padding: 6px 10px; font-size: var(--fs-sm);
+  }
+  /* 滑块自己画轨道与滑钮：不依赖系统配色，跨 macOS 版本表现一致 */
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    flex: 1; height: 20px; background: transparent; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: var(--r-pill);
+    background: linear-gradient(to right,
+      var(--accent-strong) 0 var(--fill, 50%),
+      rgba(255, 255, 255, 0.14) var(--fill, 50%) 100%);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent-strong);
+    border: 2px solid var(--bg-app);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    margin-top: -5px;
+  }
+  input[type=password], input[type=text] {
+    flex: 1; min-width: 0;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r-xs); padding: 7px 10px;
+    font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+    outline: none;
+  }
+  input[type=password]:focus, input[type=text]:focus { border-color: var(--border-strong); }
+  input.masked { color: var(--ok); letter-spacing: .02em; }
+  .pill { font-size: var(--fs-xs); color: var(--text-dim); background: var(--surface-0); border: 1px solid var(--border);
+          border-radius: var(--r-pill); padding: 3px 9px; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); }
+  footer { position: relative; display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 22px; }
+  button {
+    appearance: none; border: 1px solid var(--border); background: var(--surface-0); color: var(--text);
+    border-radius: var(--r-sm); padding: 7px 14px; font-size: var(--fs-sm); cursor: pointer;
+  }
+  button:hover { border-color: var(--border-strong); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .nowrap { white-space: nowrap; }
+  .row-top { align-items: flex-start; }
+  .stack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .inline { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .engine-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .engine-line .dir-path { flex: 1; }
+  .status-row { margin: 0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .status-row .asset-stat { flex: none; }
+  .preview-btn { margin-left: auto; }
+  .num-input { width: 70px; }
+  .spacer { flex: 1; }
+  .log-path { color: var(--text-dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gpu-info { flex: 1; color: var(--text-dim); font-size: 11px; }
+  .gpu-track { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .gpu-bar { height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+  .gpu-prog-text { color: var(--text-dim); font-size: 11px; min-width: 88px; text-align: right; }
+  .truncate { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .ml-6 { margin-left: 6px; }
+  .ml-10 { margin-left: 10px; }
+  .shortcut-hint { margin: 6px 0 0; }
+  .row-flush { margin-left: 0; }
+  .panel-block { margin: 2px 0 8px 108px; }
+  .flex-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+  .flex-center { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .data-info { color: var(--text-dim); font-size: 12px; }
+  .backup-list { flex: 1; min-width: 220px; }
+  .alts-list { display: flex; flex-direction: column; gap: 8px; }
+  button.primary { background: var(--accent); border-color: var(--accent-strong); color: #fff; }
+  button.danger { border-color: var(--danger-btn-border); color: var(--danger-btn-text); }
+  #status { position: absolute; right: 0; font-size: var(--fs-sm); color: var(--text-dim); }
+  #ttsEngineHint { white-space: pre-line; }
+  #ttsEngineHint .bert-size { color: var(--text-accent); font-weight: 600; }
+  .hint { color: var(--text-faint); font-size: var(--fs-xs); line-height: 1.5; margin: -4px 0 0 108px; }
+  .hint.dir-path { margin: 0; }
+  .hint code { color: var(--text-accent); font-size: 10.5px; }
+  .inline .hint, .stack > .hint, .hint.status-row { margin: 0; }
+  #assetDropZone.dragover {
+    outline: 1px dashed var(--accent);
+    outline-offset: 6px;
+    border-radius: var(--r-sm);
+  }
+  .asset-panel { border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; margin: 8px 0 12px 108px; }
+  .asset-panel h3 { font-size: var(--fs-sm); color: var(--text-accent); margin: 0 0 8px; }
+  .asset-install-item { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; margin: 4px 0; }
+  .asset-install-item input { margin-top: 2px; }
+  .asset-install-item .path { color: var(--text-faint); font-size: 11px; word-break: break-all; }
+  .asset-install-progress { color: var(--text-accent); font-size: 12px; margin: 6px 0; }
+  .asset-install-errors { color: #ff9b9b; font-size: 11px; white-space: pre-wrap; margin: 6px 0; }
+</style>
+</head>
+<body>
+  <h1>Nihonco 設定 <small>ニホンコ</small></h1>
+
+  <section>
+    <h2 class="section-title">资源</h2>
+    <div class="row"><label>资产</label>
+      <button id="openAssets">打开资产目录</button>
+      <span id="dirAssets" class="hint dir-path">—</span>
+    </div>
+    <div id="assetDropZone">
+    <div class="row">
+      <label>Live2D Core</label>
+      <button id="dlCore">下载 SDK</button>
+      <span id="statCore" class="hint asset-stat">—</span>
+    </div>
+    <div class="row">
+      <label>Live2D 模型</label>
+      <button id="dlModel">下载 Hiyori</button>
+      <span id="statModel" class="hint asset-stat">—</span>
+    </div>
+    <div class="row row-top">
+      <label>ASR</label>
+      <div class="stack">
+        <span id="statAsr" class="hint asset-stat">—</span>
+        <span class="hint">mlx 模型先跑 <code>npm run setup:mlx</code></span>
+      </div>
+    </div>
+    <div class="row row-top">
+      <label>TTS</label>
+      <div class="stack">
+        <div class="engine-line">
+          <button id="dlVoice">下载 VOICEVOX</button>
+          <span id="statVoice" class="asset-stat">—</span>
+        </div>
+        <div class="engine-line">
+          <span class="hint dir-path" id="voicevoxPath">—</span>
+          <button id="pickVoicevox" class="pill" data-tip="手动指定 VOICEVOX 引擎">选择路径</button>
+        </div>
+        <div class="engine-line">
+          <button id="dlAivis">下载 AivisSpeech</button>
+          <span id="statAivis" class="asset-stat">—</span>
+        </div>
+        <div class="engine-line">
+          <span class="hint dir-path" id="aivisPath">—</span>
+          <button id="pickAivis" class="pill" data-tip="手动指定 AivisSpeech 引擎">选择路径</button>
+        </div>
+        <span class="hint">选择路径时请选引擎目录里的 <code>run</code>（Windows 为 <code>run.exe</code>）</span>
+      </div>
+    </div>
+    <div class="row">
+      <label>Aivis 声线</label>
+      <span class="hint">拖入 .aivmx</span>
+    </div>
+    <div class="hint">模型、Cubism Core、VOICEVOX、Aivis 都不随应用分发；装好后重启应用。详见 docs/ASSETS.md。</div>
+    </div>
+  </section>
+    <div id="assetInstallPanel" class="asset-panel" hidden>
+      <h3>安装确认</h3>
+      <div id="assetInstallList"></div>
+      <div id="assetInstallProgress" class="asset-install-progress"></div>
+      <div id="assetInstallErrors" class="asset-install-errors"></div>
+      <div class="row">
+        <button id="assetInstallConfirm" class="primary">安装选中项</button>
+        <button id="assetInstallCancel">取消</button>
+      </div>
+    </div>
+    <div class="row">
+      <button id="restartApp">重启应用</button>
+      <span class="hint">安装/覆盖资源后重启才会生效</span>
+    </div>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">Live2D</h2>
+    <div class="row"><label>窗口大小</label>
+      <span class="mini">宽</span>
+      <input id="winW" type="number" min="240" step="10" class="num-input">
+      <span class="mini">高</span>
+      <input id="winH" type="number" min="320" step="10" class="num-input">
+      <span class="spacer"></span>
+      <button id="applyWinSize" class="nowrap">应用</button>
+      <button id="resetWinSize" class="nowrap">恢复默认</button>
+    </div>
+    <div class="row"><label>模型</label><select id="modelPick"></select></div>
+    <div class="row"><label>位置</label>
+      <span class="mini">大小</span>
+      <input id="fitF" type="number" step="0.05" class="num-input" title="高度倍数（越大越放大）">
+    </div>
+    <div class="row"><label></label>
+      <span class="mini">左右</span>
+      <input id="fitMx" type="number" step="0.01" class="num-input" title="左右 0–1">
+      <span class="mini">上下</span>
+      <input id="fitMy" type="number" step="0.01" class="num-input" title="上下偏移">
+      <span class="spacer"></span>
+      <button id="applyFit" class="nowrap">应用</button>
+      <button id="saveFit" class="nowrap" title="保存为该模型的默认位置">保存位置</button>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">ASR</h2>
+    <div class="row"><label>语音识别</label>
+      <span class="mini">引擎</span>
+      <select id="asrBackend" data-tip="mlx：Apple GPU，需 Python；whisper.cpp：Metal，免 Python"></select>
+      <button id="applyAsr" class="nowrap" data-tip="应用后才切换识别服务">应用</button>
+    </div>
+    <div class="row"><label></label>
+      <span class="mini">模型</span>
+      <select id="asrModel"></select>
+    </div>
+    <p class="hint"><span id="asrInfo">—</span><br>
+      后端 <code>whisper.cpp</code> 需要 <code>.whisper/whisper-server</code>；<code>mlx</code> 需要
+      <code>.venv</code>（Python），切换后会自动重启识别服务（几秒）。<br>
+      模型清单来自 <code>.whisper/models</code>（ggml）与 <code>.hf-cache</code>（mlx）。</p>
+    <div class="row"><label>日志</label>
+      <button id="asrLog" class="pill" data-tip="记录每次识别的耗时/引擎/文本（不存音频）">—</button>
+      <span id="asrLogPath" class="log-path"></span>
+    </div>
+    <p class="hint">每次识别记一行：时间 / 耗时 / 音频大小 / 引擎 / 热词长度 / 文本（只存文本，不存音频）。排查「识别慢」时最有用。</p>
+
+    <!-- GPU 加速版 whisper.cpp（Windows）：下载到 %APPDATA%\Nihonco\asr\ -->
+    <div class="row" id="gpuRow" style="display:none"><label>识别加速</label>
+      <span id="gpuInfo" class="gpu-info">—</span>
+      <button id="gpuInstall" class="pill" data-tip="下载 CUDA 版 whisper.cpp（约 653 MB），下完自动切换">下载</button>
+      <button id="gpuRemove" class="pill" data-tip="删掉已下载的 GPU 版，回到 CPU">卸载</button>
+    </div>
+    <div class="row" id="gpuProgRow" style="display:none"><label></label>
+      <div class="gpu-track">
+        <div id="gpuProg" class="gpu-bar"></div>
+      </div>
+      <span id="gpuProgText" class="gpu-prog-text"></span>
+      <button id="gpuCancel" class="pill" style="display:none" data-tip="取消下载/安装：临时文件会被清掉，现有后端不受影响">取消</button>
+    </div>
+
+    
+  </section>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">LLM</h2>
+    <div class="row"><label>模型</label>
+      <select id="model"></select>
+      <button id="testLLM">测试连通</button>
+    </div>
+    <div class="hint" id="baseUrl">当前接口：—</div>
+    <div class="row" id="customRow" style="display:none"><label>自定义模型</label>
+      <input id="customModel" type="text" placeholder="模型名，如 my-model" spellcheck="false" />
+    </div>
+    <div class="row" id="customBaseRow" style="display:none"><label>自定义地址</label>
+      <input id="customBase" type="text" placeholder="https://your-gateway/v1" spellcheck="false" />
+      <button id="applyCustom">应用</button>
+    </div>
+    <div class="row"><label>API key</label>
+      <input id="apiKey" type="text" placeholder="粘贴新 key 才会修改" spellcheck="false" autocomplete="off" />
+      <button id="saveKey">保存 key</button>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">TTS</h2>
+    <div class="row"><label>语音合成</label>
+      <span class="mini">引擎</span>
+      <select id="ttsEngine">
+        <option value="voicevox">VOICEVOX</option>
+        <option value="aivis">AivisSpeech</option>
+      </select>
+      <button id="applyEngine" class="nowrap" data-tip="切换并启动所选引擎">应用</button>
+      <button id="cancelEngine" class="nowrap danger" hidden>取消</button>
+    </div>
+    <div class="hint" id="ttsEngineHint">首次启动 AivisSpeech 会自动下载 BERT 模型，可能需要几分钟。</div>
+    <div class="row"><label></label>
+      <span class="mini">声线</span>
+      <select id="voicePick"></select>
+      <button id="preview" class="preview-btn">试听一句</button>
+    </div>
+    <div class="row"><label>语速</label>
+      <input id="speed" type="range" min="0.5" max="1.5" step="0.05" />
+      <span class="val" id="speedVal"></span>
+    </div>
+    <div class="row"><label>音高</label>
+      <input id="pitch" type="range" min="-0.15" max="0.15" step="0.01" />
+      <span class="val" id="pitchVal"></span>
+    </div>
+    <div class="row"><label>语调</label>
+      <input id="intonation" type="range" min="0" max="2" step="0.05" />
+      <span class="val" id="intonationVal"></span>
+    </div>
+    <div class="row"><label>音量</label>
+      <input id="volume" type="range" min="0" max="2" step="0.05" />
+      <span class="val" id="volumeVal"></span>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+<section>
+  <h2 class="section-title">记忆</h2>
+  <div class="row"><label>长期记忆</label>
+    <button id="memoryManage" class="nowrap">管理…</button>
+    <span id="memoryCount" class="hint ml-6">—</span>
+  </div>
+  <div id="memoryPanel" style="display:none; margin: 2px 0 8px 108px">
+    <div id="memoryProfile"></div>
+    <div id="memoryRelation"></div>
+    <div id="memoryEpisodes"></div>
+    <div class="row row-flush">
+      <button id="memoryClear" class="danger">清空记忆…</button>
+    </div>
+  </div>
+  <div class="hint">只保存少量长期偏好和经历，不保存完整聊天；自动提取的内容可在这里修改或删除。</div>
+</section>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">快捷键</h2>
+    <div class="row"><label>快捷键</label>
+      <button id="shortcutToggle" class="pill">—</button>
+    </div>
+    <p class="hint shortcut-hint" id="shortcutHint">点击【改键】，按下新的组合键；<b>Esc</b> 取消。全局快捷键至少要有一个修饰键（⌘ / ⌃ / ⌥）。</p>
+    <div id="shortcutCols" class="sc-cols">
+      <div class="sc-col" data-scope="global"></div>
+      <div class="sc-col" data-scope="local"></div>
+    </div>
+    <div class="row">
+      <button id="shortcutReset">全部恢复默认</button>
+      <span id="shortcutMsg" class="hint ml-10">—</span>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">应用信息</h2>
+    <div class="row" id="autostartRow" style="display:none"><label>开机自启</label>
+      <button id="autostart" class="pill" data-tip="登录后自动启动 Nihonco（默认关闭）">—</button>
+    </div>
+  </section>
+
+  <hr class="sep" />
+
+<section>
+    <h2 class="section-title">数据</h2>
+    <div class="row"><label>目录</label>
+      <button id="openData">打开数据目录</button>
+      <span id="dirData" class="hint dir-path">—</span>
+    </div>
+    <div class="row"><label>也算对记录</label>
+      <button id="altsManage" class="nowrap">管理…</button>
+      <span id="altsCount" class="hint ml-6">—</span>
+    </div>
+    <div id="altsPanel" style="display:none; margin: 2px 0 8px 108px">
+      <div id="altsList" class="alts-list"></div>
+      <div class="hint" id="altsEmpty" style="display:none">还没有「也算对」记录。</div>
+    </div>
+    <div class="row">
+      <label>学习记录</label>
+      <div class="flex-wrap">
+        <button id="exportData">导出…</button>
+        <button id="importData">导入…</button>
+        <button id="resetLevel" class="danger">清空当前…</button>
+        <button id="resetData" class="danger">清空全部…</button>
+      </div>
+    </div>
+    <div class="row">
+      <label></label>
+      <div id="dataInfo" class="data-info">读取中…</div>
+    </div>
+    <div class="row">
+      <label></label>
+      <div class="flex-center">
+        <select id="backupList" class="backup-list"></select>
+        <button id="restoreBackup">应用</button>
+      </div>
+    </div>
+    <div class="hint">导出/导入/清空都会先在 data/backup/ 留一份快照（保留最近 7 份），从上面选一份恢复。</div>
+  </section>
+
+
+
+  <footer>
+    <button class="primary" id="save">保存</button>
+    <button id="close">关闭</button>
+    <span id="status"></span>
+  </footer>
+
+  <script src="settings-core.js"></script>
+  <script src="settings-assets.js"></script>
+  <script src="settings-shortcuts.js"></script>
+  <script src="settings-data.js"></script>
+  <script src="settings-memory.js"></script>
+  <script src="settings-tts.js"></script>
+  <script src="settings-asr.js"></script>
+  <script src="settings-llm.js"></script>
+  <script src="settings-live2d.js"></script>
+  <script src="settings-maintenance.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

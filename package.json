@@ -1,0 +1,171 @@
+{
+  "name": "nihonco-jp",
+  "version": "0.7.15",
+  "description": "Live2D 日语口语搭子：本地语音识别 + 云端 LLM + VOICEVOX 小夜声线",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js --no-sandbox",
+    "pet": "electron main.js --no-sandbox",
+    "setup": "node tools/setup.mjs",
+    "build:app": "node tools/build-app.mjs --target=mac --mode=full",
+    "build:app:lite": "node tools/build-app.mjs --target=mac --mode=lite",
+    "build:app:full": "node tools/build-app.mjs --target=mac --mode=full",
+    "build:app:lite:mlx": "node tools/build-app.mjs --target=mac --mode=lite --with-mlx",
+    "build:app:full:mlx": "node tools/build-app.mjs --target=mac --mode=full --with-mlx",
+    "build:jlpt": "node tools/build-jlpt-data.mjs",
+    "scan": "node tools/scan.mjs",
+    "release": "node tools/release.mjs",
+    "test": "node tools/run-tests.mjs",
+    "test:watch": "node tools/run-tests.mjs --watch",
+    "smoke": "node tools/smoke.mjs",
+    "setup:whisper": "node tools/setup-whisper.mjs",
+    "snapshot:readings": "node tools/snapshot-readings.mjs",
+    "build:win": "npm run build:win:lite",
+    "build:win:dir": "npm run build:win:lite:dir",
+    "build:win:portable": "node tools/build-app.mjs --target=win --mode=full --format=portable",
+    "build:win:nsis": "node tools/build-app.mjs --target=win --mode=full --format=nsis",
+    "check:assets": "node tools/check-assets.mjs",
+    "check:assets:lite": "node tools/check-assets.mjs --lite",
+    "build:win:lite": "node tools/build-app.mjs --target=win --mode=lite",
+    "build:win:lite:dir": "node tools/build-app.mjs --target=win --mode=lite --dir",
+    "build:win:full": "node tools/build-app.mjs --target=win --mode=full",
+    "build:win:full:dir": "node tools/build-app.mjs --target=win --mode=full --dir",
+    "build:win:full:nsis": "node tools/build-app.mjs --target=win --mode=full --format=nsis",
+    "build:win:full:portable": "node tools/build-app.mjs --target=win --mode=full --format=portable",
+    "build:win:lite:nsis": "node tools/build-app.mjs --target=win --mode=lite --format=nsis",
+    "build:win:lite:portable": "node tools/build-app.mjs --target=win --mode=lite --format=portable",
+    "setup:mlx": "node tools/setup-mlx.mjs",
+    "smoke:settings": "node tools/settings-smoke.mjs",
+    "demo": "node tools/demo.mjs"
+  },
+  "keywords": [],
+  "author": "KronosOceanus",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "dependencies": {
+    "@pixi/unsafe-eval": "^7.4.3",
+    "@polyglot-bundles/ja-jlpt-syllabi": "^0.1.5",
+    "adm-zip": "^0.6.1",
+    "kuromoji": "^0.1.2",
+    "pixi-live2d-display-lipsyncpatch": "^0.5.0-ls-8",
+    "pixi.js": "^7.4.3"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "jp.nihonco.app",
+    "productName": "Nihonco",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "agent/**/*.js",
+      "main/**/*.js",
+      "renderer/**/*.js",
+      "preload.js",
+      "preload-settings.js",
+      "pet.html",
+      "pet.js",
+      "settings.html",
+      "settings.js",
+      "settings-core.js",
+      "settings-assets.js",
+      "settings-shortcuts.js",
+      "settings-data.js",
+      "settings-memory.js",
+      "settings-tts.js",
+      "settings-asr.js",
+      "settings-llm.js",
+      "settings-live2d.js",
+      "settings-maintenance.js",
+      "ui.css",
+      "lib/**",
+      "model/**",
+      "!model/miku/**",
+      "!model/樱花miku/**",
+      "!model/重音/**",
+      "data/jlpt.json",
+      "data/word-levels.json",
+      "data/kanji-stems.json",
+      "data/pattern-gloss-zh.json",
+      "data/patterns-n5.json",
+      "data/patterns-n4.json",
+      "data/patterns-n3.json",
+      "data/patterns-n2.json",
+      "data/patterns-n1.json",
+      "data/enrich-cache.seed.json",
+      ".whisper/whisper-server",
+      ".whisper/whisper-server.exe",
+      ".whisper/whisper.dll",
+      ".whisper/ggml.dll",
+      ".whisper/ggml-base.dll",
+      ".whisper/ggml-cpu-*.dll",
+      ".whisper/models/ggml-small-q5_1.bin",
+      "!**/*.map",
+      "!tests/**",
+      "!tools/**",
+      "!docs/**",
+      "!dist/**",
+      "!**/*.log",
+      "node_modules/kuromoji/**",
+      "node_modules/doublearray/**",
+      "node_modules/zlibjs/**",
+      "node_modules/async/**"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "model/**",
+      "!model/miku/**",
+      "!model/樱花miku/**",
+      "!model/重音/**",
+      "data/*.json",
+      ".whisper/**"
+    ],
+    "mac": {
+      "icon": "assets/AppIcon.icns"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Nihonco",
+      "artifactName": "Nihonco-${version}-setup.exe"
+    },
+    "portable": {
+      "artifactName": "Nihonco-${version}-portable.exe"
+    },
+    "compression": "normal"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KronosOceanus/Nihonco_JP.git"
+  },
+  "homepage": "https://github.com/KronosOceanus/Nihonco_JP#readme",
+  "bugs": {
+    "url": "https://github.com/KronosOceanus/Nihonco_JP/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

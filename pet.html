@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'none'" />
+<link rel="stylesheet" href="ui.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Live2D 挂件</title>
+<style>
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: transparent;            /* 透明窗口：整页背景必须透明 */
+    -webkit-user-select: none; user-select: none;
+    cursor: default;
+  }
+  #stage { position: fixed; inset: 0; }
+
+  /* 顶部拖拽条：只有这里能拖动窗口，避免和「点击模型」抢事件 */
+  #bar {
+    position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 18px; z-index: 20;
+    border-radius: 0 0 var(--r-sm) var(--r-sm);
+    background: var(--tint-weak);
+    -webkit-app-region: drag;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  #bar:hover { background: var(--tint-soft); }
+  #bar i {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--text-bright);
+  }
+
+  /* 说话输入条 */
+  #bubble {
+    position: fixed; left: 10px; right: 10px; bottom: 8px; z-index: 20;
+    display: flex; flex-direction: column; gap: 4px;
+    -webkit-app-region: no-drag;
+  }
+  #row { display: flex; gap: 6px; align-items: center; }
+  /* 打字框 + 语音回显叠在同一块里：回显在上，输入在下 */
+  #bubble #echo {
+    padding: 4px 10px; border-radius: var(--r-sm); font-size: 11.5px; line-height: 1.35;
+    color: var(--text-echo); background: var(--surface-echo);
+    border: 1px solid var(--tint-line);
+    word-break: break-all; white-space: pre-wrap;
+  }
+  #bubble #echo.gone { display: none; }
+  #bubble #echo.expandable { cursor: pointer; }
+  #bubble #echo .echo-k { flex: 0 0 3.8em; color: var(--text-accent); font-weight: 600; }
+  #bubble #echo .echo-body { flex: 1; min-width: 0; }
+  #bubble #echo .echo-ms { flex: 0 0 auto; color: var(--text-dim); margin-left: 6px; font-size: 10.5px; }
+  #bubble #echo .echo-row { display: flex; align-items: baseline; gap: 6px; margin-top: 3px; }
+  #bubble #echo .echo-actions { flex: 0 0 auto; display: flex; gap: 6px; margin-left: auto; }
+  #bubble #echo .echo-actions button {
+    font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--tint-line); background: transparent; color: var(--text); cursor: pointer;
+  }
+  #bubble #echo .echo-actions button:hover { background: var(--tint-line); }
+  #bubble #echo .echo-alt { color: var(--text-soft); }
+  .word-hit { border-bottom: 1px dotted rgba(160, 190, 240, 0.6); cursor: help; pointer-events: auto; }
+  #wordPop {
+    position: fixed; pointer-events: auto; z-index: 60; max-width: 240px; padding: 8px 10px;
+    border-radius: var(--r-sm); background: var(--surface-bubble);
+    border: 1px solid var(--border-strong); box-shadow: 0 6px 18px var(--shadow);
+    font-size: 11.5px; line-height: 1.5;
+  }
+  #wordPop.gone { display: none; }
+  #wordPop .wp-top { display: flex; gap: 8px; align-items: baseline; }
+  #wordPop .wp-word { color: var(--text-accent); font-weight: 600; }
+  #wordPop .wp-say { margin-left: auto; padding: 0 2px; background: none; border: 0; cursor: pointer; font-size: 13px; color: var(--text-dim); }
+  #wordPop .wp-say:hover { color: var(--text); }
+  #wordPop .wp-read { color: var(--text-dim); }
+  #wordPop .wp-zh { color: var(--text); margin-top: 2px; }
+  #wordPop .wp-meta { color: var(--text-dim); margin-top: 2px; font-size: 10.5px; }
+  #bubble #echo .echo-scene { flex: 0 0 auto; color: var(--text-dim); font-size: 10.5px; margin-left: auto; }
+  /* 有语音回显时，模式栏和面板一起上移，避免压住回显 */
+  /* 回显出现时：模式栏与面板按回显实际高度上移 */
+  body.echo-on #panel { bottom: calc(50px + var(--echo-h, 30px)); }
+  #say {
+    flex: 1; min-width: 0;
+    padding: 8px 12px;
+    font: var(--fs-sm)/1.4 var(--font-ui);
+    color: var(--text);
+    background: var(--surface-0);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    outline: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  #say::placeholder { color: var(--text-soft); }
+  #say:focus { border-color: var(--border-strong); }
+
+  /* 麦克风按钮：按住说话 */
+  /* 再读一遍：嵌在回复气泡内部左侧 */
+  /* 振假名：汉字上方的小读音 */
+  ruby { ruby-position: over; }
+  ruby rt { font-size: 9px; color: var(--text-muted); letter-spacing: 0; font-weight: 400; }
+
+  #reply { display: flex; gap: 8px; align-items: flex-start; }
+  #replyText { flex: 1; min-width: 0; }
+  #replay {
+    flex: 0 0 auto; width: 24px; height: 24px; border-radius: var(--r-md);
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; line-height: 1; padding-left: 2px;
+    color: var(--text); cursor: pointer; user-select: none;
+    background: var(--tint-fill); border: 1px solid var(--border-strong);
+    -webkit-app-region: no-drag;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  #replay:hover { color: var(--text); border-color: var(--border-strong); }
+  /* #panel 是 pointer-events:none，气泡内的按钮必须自己打开，否则点不到 */
+  /* 振假名：汉字上方的小读音 */
+  ruby { ruby-position: over; }
+  ruby rt { font-size: 9px; color: var(--text-muted); letter-spacing: 0; font-weight: 400; }
+
+  #reply { pointer-events: none; }
+  #replay { pointer-events: auto; position: relative; }
+  /* 让「再读一遍」的提示出现在按钮左上方，别压住文字 */
+  #replay::after {
+    bottom: auto; top: -2px; left: 30px; right: auto; z-index: 50;
+    padding: 4px 8px; font-size: 11px;
+  }
+  #replay.busy { opacity: .5; }
+
+  #lang {
+    flex: 0 0 auto; height: 34px; padding: 0 9px; border-radius: var(--r-pill);
+    display: flex; align-items: center; justify-content: center;
+    font-size: var(--fs-xs); color: var(--text); cursor: pointer; user-select: none;
+    /* 两种语言状态都用高亮样式，保持一致 */
+    background: var(--accent-soft); border: 1px solid var(--border-strong);
+    -webkit-app-region: no-drag; white-space: nowrap;
+  }
+  #lang:hover { border-color: var(--text-active); }
+  #lang.zh { background: var(--accent-soft); border-color: var(--border-strong); }
+
+  #settings {
+    flex: 0 0 auto; height: 34px; width: 34px; border-radius: var(--r-pill);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--text); cursor: pointer; user-select: none;
+    background: var(--surface-0); border: 1px solid var(--border);
+    -webkit-app-region: no-drag;
+  }
+  #settings:hover { border-color: var(--border-strong); }
+
+  #mic {
+    flex: 0 0 auto;
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; line-height: 1; color: var(--text);
+    background: var(--surface-0);
+    border: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+    -webkit-app-region: no-drag;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  #mic:hover { border-color: var(--border-strong); }
+  #mic.rec {
+    background: var(--danger-bg);
+    border-color: var(--danger-soft);
+    transform: scale(1.08);
+  }
+  #mic.busy { opacity: .55; }
+  #mic.cancel {
+    background: var(--danger-line) !important;
+    border-color: var(--danger-border) !important;
+  }
+
+  /* 模式切换：会話 / 教学 */
+  /* 模式选择器：四个独立按钮，不是循环切换 */
+  /* 模式栏：独立一行，排在输入框上方 */
+  #modes {
+    position: fixed; left: 10px; right: 10px; top: 8px; z-index: 20;
+    height: 30px;
+    -webkit-app-region: no-drag;
+  }
+  /* 模式按钮：右上角 */
+  #modegroup {
+    position: absolute; right: 0; top: 0;
+    display: flex; gap: 6px;
+  }
+  #seenStat {
+    font: 11px/1 -apple-system, "PingFang SC", sans-serif;
+    color: var(--text-dim); align-self: center;
+    padding-right: 2px; white-space: nowrap;
+  }
+  #level { font-weight: 600; color: var(--text-dim); }
+  #level::after { left: auto; right: 0; }
+  /* 顶部按钮：提示向下展开 */
+  #modes [data-tip]::after { top: 34px; bottom: auto; }
+  .lv-btn { font-weight: 600; color: var(--text-dim); }
+  /* 全局档位绝对定位到「会話」下方；单词/例句的档位跟着 .lv-wrap 走 */
+  #gLevel, #wordLevel, #patternLevel {
+    box-sizing: border-box;     /* 宽度和模式按钮严格一致 */
+    justify-content: center;
+    padding: 0 4px;
+  }
+  #gLevel { position: absolute; visibility: hidden; }   /* 排好版再显示，避免加载时闪到左上角 */
+  /* 模式按钮里的「已学/全部」：常驻显示，和按钮同色系但更淡 */
+  .cnt {
+    margin-left: 5px;
+    font: 600 10.5px/1 var(--font-ui);
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    display: inline-block; text-align: right;
+    min-width: 52px;                 /* 最多 4/4 位数字，宽度不再随内容变 */
+  }
+  #modeWord, #modePattern { box-sizing: border-box; }
+  #modeWord { width: 108px; }        /* 単語 + xxxx/xxxx */
+  #modePattern { width: 100px; }     /* 例文 + xxx/xxx */
+  #patternSeen { min-width: 44px; }
+  .mode-btn.active .cnt { color: var(--text-on-accent); }
+  /* 进度 + 档位 一组，整体定位到模式按钮下方 */
+  .lv-wrap {
+    position: absolute; display: none; align-items: center; gap: 6px;
+  }
+  #newbatch::after { right: 0; left: auto; }
+  #newbatch { position: absolute; right: 0; top: 72px; }   /* 在「復習」下方 */
+  #seenStat {
+    font: 11px/1 -apple-system, "PingFang SC", sans-serif;
+    color: var(--text-dim); align-self: center;
+    padding-right: 2px; white-space: nowrap;
+  }
+  #level { font-weight: 600; color: var(--text-dim); }               /* 左对齐的水平按钮 */
+  /* 上拉的水平列表 */
+  #levelMenu {
+    position: fixed; z-index: 40; min-width: 48px; width: max-content;
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 4px; border-radius: var(--r-sm);
+    background: var(--surface-1);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: 0 8px 22px var(--shadow-strong);
+    -webkit-app-region: no-drag;
+  }
+  #levelMenu.gone { display: none; }
+  .lv-item {
+    padding: 4px 8px; border-radius: var(--r-xs); font-size: 11.5px;
+    color: var(--text); cursor: pointer; text-align: center;
+  }
+  .lv-item:hover { background: var(--accent-line); }
+  .lv-item.active { color: var(--bg-app); background: var(--accent-pale); font-weight: 600; }
+  .mode-btn {
+    height: 28px; padding: 0 8px; border-radius: var(--r-pill);
+    display: flex; align-items: center; font-size: 11.5px; color: var(--text-hint);
+    background: var(--surface-0); border: 1px solid var(--border-soft);
+    cursor: pointer; user-select: none; white-space: nowrap;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .mode-btn:hover { border-color: var(--border-strong); }
+  /* 「新規」按钮：默认隐藏，切到单词模式才显示；悬浮显示提示气泡 */
+  #newbatch { display: none; }   /* 定位由下方 absolute 规则负责 */
+  /* 错题数：作为「復習」按钮里的后缀，不再单独浮在外面 */
+  #wrongCount {
+    display: none; margin-left: 4px;
+    font: 600 11px/1 var(--font-ui);
+    color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  #wrongCount.on { display: inline-block; }
+  #wrongCount.on::before { content: "·"; margin-right: 3px; opacity: .7; }
+  #review { position: absolute; right: 0; top: 36px; display: none; gap: 0; }   /* 最上面：最宽 */
+  #review.show { display: flex; }
+  #review.active { color: var(--bg-app); background: var(--accent-pale); font-weight: 600; }
+  #newbatch.show { display: flex; }
+  [data-tip] { position: relative; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; right: -6px; bottom: 40px;
+    padding: 6px 10px; border-radius: var(--r-xs);
+    font-size: 12px; line-height: 1.3; white-space: nowrap;
+    color: var(--text); background: var(--surface-1);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: 0 4px 14px var(--shadow);
+    opacity: 0; transform: translateY(4px); pointer-events: none;
+    z-index: 40;                       /* 提示要盖在按钮（新規/復習）之上 */
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  [data-tip]:hover::after { opacity: 1; transform: translateY(0); }
+
+  #newbatch::after {
+    content: attr(data-tip);
+    position: absolute; right: -6px; bottom: 36px;
+    padding: 6px 10px; border-radius: var(--r-xs);
+    font-size: 12px; line-height: 1.3; white-space: nowrap;
+    color: var(--text); background: var(--surface-1);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: 0 4px 14px var(--shadow);
+    opacity: 0; transform: translateY(4px); pointer-events: none;
+    z-index: 40;                       /* 提示要盖在按钮（新規/復習）之上 */
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  #newbatch:hover::after { opacity: 1; transform: translateY(0); }
+
+  .mode-btn.active {
+    color: var(--bg-app); background: var(--accent-pale);
+    border-color: var(--text-active); font-weight: 600;
+  }
+
+  /* 面板容器：回复气泡 + 讲解，纵向排列，整体贴在输入框上方 */
+  #panel {
+    position: fixed; left: 10px; right: 10px; bottom: 50px; z-index: 18;
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 52vh; overflow: auto;
+    pointer-events: none;
+  }
+
+  /* 回复气泡（日语）+ 中文译文 */
+  /* 振假名：汉字上方的小读音 */
+  ruby { ruby-position: over; }
+  ruby rt { font-size: 9px; color: var(--text-muted); letter-spacing: 0; font-weight: 400; }
+
+  #reply {
+    padding: 10px 12px; border-radius: var(--r-md);
+    font: 14px/1.6 -apple-system, "PingFang SC", sans-serif;
+    color: var(--text); background: var(--surface-bubble);
+    border: 1px solid var(--border-soft);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    white-space: pre-wrap; transition: opacity .25s ease;
+    overflow-wrap: anywhere;      /* 罗马字这类超长串也能在标签后面接着折行 */
+  }
+  #reply .zh { color: var(--text-soft); font-size: 12px; }
+
+  /* 纠错 / 讲解 */
+  /* 朗读内容的高亮（常亮）：半透明底色，不刺眼 */
+  .hl {
+    background: var(--hl-bg);
+    box-shadow: inset 0 0 0 1px var(--hl-line);
+    border-radius: 4px; padding: 0 2px;
+  }
+  /* 她说的话（鼓励/夸奖）：不占标签列，用更暗的颜色 */
+  .say { color: var(--text-dim); }
+  /* 罗马字是一整串没有空格的字符，允许在标签后直接折行 */
+  .romaji { overflow-wrap: anywhere; word-break: break-all; }
+
+  /* 卡片内的字段标签：意思 / 例句 */
+  .lbl {
+    display: inline-block; min-width: 34px;
+    color: var(--text-faint); font-size: 11px; margin-right: 4px;
+  }
+  .note-first { display: flex; align-items: flex-start; gap: 6px; }
+  .note-first .lbl { flex: 0 0 auto; }
+  .note-first .note-text { flex: 1 1 auto; min-width: 0; }
+  .note-next {
+    margin: 0 0 0 auto; flex: 0 0 auto;
+    pointer-events: auto;       /* #panel 是 none，气泡里的按钮必须自己打开 */
+    padding: 2px 9px; font-size: 11px; cursor: pointer; white-space: nowrap;
+    color: var(--text-muted); background: rgba(255,255,255,.06);
+    border: 1px solid var(--border-strong); border-radius: 999px;
+  }
+  .note-next:hover { color: var(--text); border-color: var(--text-dim); }
+  .note-next:disabled { opacity: .5; cursor: default; }
+  #note {
+    padding: 8px 10px; border-radius: var(--r-sm);
+    font: 12px/1.55 -apple-system, "PingFang SC", sans-serif;
+    color: var(--note-text); background: var(--note-bg);
+    border: 1px solid var(--note-border);
+    white-space: pre-wrap; transition: opacity .25s ease;
+    overflow-wrap: anywhere;      /* 罗马字这类超长串也能在标签后面接着折行 */
+  }
+  .gone { opacity: 0; pointer-events: none; }
+  /* 回复/黄卡隐藏时要真正收起，否则会留下空白把回复顶上去 */
+  #reply.gone, #note.gone { display: none; }
+
+  #hud {
+    position: fixed; left: 12px; top: 24px; z-index: 15;
+    /* 宽度由 app-ui 按模式栏左边界动态设置，保证不压到右上角按钮 */
+    max-width: 50%;
+    font: 11px/1.45 -apple-system, "PingFang SC", sans-serif;
+    color: var(--text-muted);
+    pointer-events: none;
+    white-space: pre-line; overflow-wrap: anywhere; word-break: break-word;
+    transition: opacity .6s ease;
+  }
+  #hud.gone { opacity: 0; }
+
+  /* 右下角拖拽手柄：拖它改窗口大小（透明窗口靠它才有明显的可抓区域） */
+  #resizeHandle {
+    position: fixed; right: 0; bottom: 0; width: 22px; height: 22px;
+    z-index: 40; cursor: nwse-resize; -webkit-app-region: no-drag;
+  }
+  #resizeHandle::after {
+    content: ""; position: absolute; right: 3px; bottom: 3px;
+    width: 0; height: 0; border-left: 9px solid transparent;
+    border-bottom: 9px solid rgba(255,255,255,.35);
+  }
+  #resizeHandle:hover::after { border-bottom-color: rgba(255,255,255,.7); }
+
+  /* 「这个也算对（记住）」：放在「你的」那一行最右 */
+  .alt-row { display: flex; align-items: center; gap: 8px; }
+  .alt-row > span { min-width: 0; overflow-wrap: anywhere; }
+  .alt-accept {
+    margin-left: auto; flex: 0 0 auto;
+    pointer-events: auto;       /* #panel 是 none，气泡里的按钮必须自己打开 */
+    padding: 2px 9px; font-size: 11px; cursor: pointer;
+    color: var(--text-muted); background: rgba(255,255,255,.06);
+    border: 1px solid var(--border-strong); border-radius: 999px;
+  }
+  .alt-accept:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* 左上角同理：往左上拖变大（右下角仍固定） */
+  #resizeHandleTL {
+    position: fixed; left: 0; top: 0; width: 22px; height: 22px;
+    z-index: 41; cursor: nwse-resize; -webkit-app-region: no-drag;
+  }
+  #resizeHandleTL::after {
+    content: ""; position: absolute; left: 3px; top: 3px;
+    width: 0; height: 0; border-right: 9px solid transparent;
+    border-top: 9px solid rgba(255,255,255,.35);
+  }
+  #resizeHandleTL:hover::after { border-top-color: rgba(255,255,255,.7); }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="bar"><i></i><i></i><i></i></div>
+  <div id="hud">加载模型中…</div>
+  <div id="resizeHandle" data-corner="br" title="拖动调整窗口大小"></div>
+  <div id="resizeHandleTL" data-corner="tl" title="拖动调整窗口大小"></div>
+  <div id="panel">
+    <div id="reply" class="gone">
+      <div id="replay" data-tip="再读一遍" tabindex="-1" style="display:none">▶</div>
+      <div id="replyText"></div>
+    </div>
+    <div id="note" class="gone"></div>
+  </div>
+  <div id="modes">
+    <div id="modegroup">
+      <div class="mode-btn active" id="mtoggle" data-mode="conv" data-tip="点击切换 会話 / 解説">会話</div>
+      <div class="mode-btn" id="modeWord" data-mode="word">単語<span class="cnt" id="wordSeen">0/0</span></div>
+      <div class="mode-btn" id="modePattern" data-mode="pattern">例文<span class="cnt" id="patternSeen">0/0</span></div>
+    </div>
+    <div id="levelMenu" class="gone">
+      <div class="lv-item" data-lv="N5">N5</div>
+      <div class="lv-item" data-lv="N4">N4</div>
+      <div class="lv-item" data-lv="N3">N3</div>
+      <div class="lv-item" data-lv="N2">N2</div>
+      <div class="lv-item" data-lv="N1">N1</div>
+    </div>
+    <!-- 全局档位：在「会話」下面 -->
+    <div class="mode-btn lv-btn" id="gLevel" data-tip="对话学习水平">N5</div>
+
+    <div class="mode-btn" id="newbatch" data-tip="下一批 20 个单词">新規</div>
+    <div class="mode-btn" id="review" data-tip="只复习错题本"><span id="reviewLabel">復習</span><span id="wrongCount"></span></div>
+
+    <!-- 单词 / 例句 各自的档位；进度显示在各自档位左边 -->
+    <div class="lv-wrap" id="wordLvWrap">
+      <div class="mode-btn lv-btn" id="wordLevel" data-tip="单词的学习水平">N5</div>
+    </div>
+    <div class="lv-wrap" id="patternLvWrap">
+      <div class="mode-btn lv-btn" id="patternLevel" data-tip="例文的学习水平">N5</div>
+    </div>
+  </div>
+  <div id="bubble">
+    <div id="echo" class="gone"></div>
+    <div id="wordPop" class="gone">
+      <div class="wp-top">
+        <span class="wp-word"></span>
+        <button class="wp-say" type="button" title="朗读这个词">🔊</button>
+      </div>
+      <div class="wp-read"></div>
+      <div class="wp-zh"></div>
+      <div class="wp-meta"></div>
+    </div>
+    <div id="row">
+      <input id="say" type="text" placeholder="按住 🎤 说话，或直接打字回车" autocomplete="off" />
+      <div id="mic">🎤</div>
+      <div id="lang" data-tip="语音识别" tabindex="-1">日本語</div>
+      <div id="settings" data-tip="设置" tabindex="-1">⚙</div>
+    </div>
+  </div>
+
+  <script src="lib/live2dcubismcore.min.js"></script>
+  <script src="node_modules/pixi.js/dist/pixi.min.js"></script>
+<script src="node_modules/@pixi/unsafe-eval/dist/unsafe-eval.min.js"></script>
+  <script src="node_modules/pixi-live2d-display-lipsyncpatch/dist/cubism4.min.js"></script>
+  <script src="renderer/state.js"></script>
+  <script src="renderer/ui.js"></script>
+  <script src="renderer/audio.js"></script>
+  <script src="renderer/speech.js"></script>
+  <script src="renderer/rec.js"></script>
+  <script src="renderer/cards.js"></script>
+  <script src="renderer/lookup.js"></script>
+  <script src="renderer/modes.js"></script>
+  <script src="renderer/model.js"></script>
+  <script src="renderer/app-ui.js"></script>
+  <script src="pet.js"></script>
+</body>
+</html>
