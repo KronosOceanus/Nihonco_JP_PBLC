@@ -26,8 +26,6 @@ nh-icon-32.png              32px
 nh-icon-16.png              16px（使用 small 变体）
 nh-small-icon.svg/png       小尺寸 H 加粗版
 nh-hairpin-product.svg/png  徽章发夹 mockup
-nh-cover-760x1120.png       视频封面：桌宠框比例 760×1120，米白底 + NH mark
-nh-cover-A-760x1120.svg/png 方案 A 文字型封面：标题 + 日语副标题 + 四个模式标签
 ```
 
 ## 小尺寸

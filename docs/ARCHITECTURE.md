@@ -110,6 +110,7 @@
 ├── assets/AppIcon.icns   # macOS 应用图标（build-app.sh / electron-builder）
 ├── assets/icon.ico        # Windows 应用图标（electron-builder）
 ├── assets/logo/           # NH mark、发夹、小尺寸导出
+├── assets/cover/          # 视频封面（760×1120 SVG + PNG）
 ├── .voice/               # 运行时音频（TTS 输出、录音、cache/ 提示音缓存，均 gitignore）
 ├── requirements.txt      # Python 依赖（mlx-whisper 等）
 ├── tools/
