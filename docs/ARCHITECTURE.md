@@ -17,7 +17,7 @@
 │   ├── ipc.js            # IPC 装配 + 两侧守卫
 │   ├── ipc/              # IPC 按域拆出的通道
 │   │   ├── pet.js        # 桌宠窗口通道
-│   │   ├── settings.js   # 设置窗口装配
+│   │   ├── settings/app.js   # 设置窗口装配
 │   │   ├── config.js     # 配置 / 模型 / 资源 / 开机自启
 │   │   ├── audio.js      # 声音 + ASR
 │   │   ├── data.js       # 导入导出 / 恢复 / 也算对
@@ -35,17 +35,19 @@
 │   ├── modes.js          # 各模式流程（出卡/判分/会话）
 │   ├── model.js          # 模型加载、取景、视线与口型写入点
 │   └── app-ui.js         # 模式切换、档位菜单、按钮对齐
-├── settings.html / settings.js # 设置窗口（独立 preload，只有配置接口）
-├── settings-core.js      # 设置窗口 DOM 工具 + SettingsApp 模块注册表
-├── settings-tts.js       # 设置窗口 TTS（引擎/声线/参数）
-├── settings-asr.js       # 设置窗口 ASR（后端/模型/GPU）
-├── settings-llm.js       # 设置窗口 LLM（模型/key/测试）
-├── settings-live2d.js    # 设置窗口 Live2D（模型/取景）
-├── settings-maintenance.js # 数据 / 开机自启 / 窗口大小
-├── settings-assets.js    # 设置窗口「资源」区（IIFE）：状态、拖放、批量确认、安装进度
-├── settings-data.js      # 设置窗口「数据/也算对」（IIFE）
-├── settings-memory.js    # 设置窗口「记忆」查看/编辑/删除（IIFE）
-├── settings-shortcuts.js # 设置窗口「快捷键」（IIFE）
+├── settings/                 # 设置窗口（独立 preload，只有配置接口）
+│   ├── index.html
+│   ├── app.js            # 设置编排
+│   ├── core.js           # DOM 工具 + SettingsApp 模块注册表
+│   ├── tts.js            # TTS（引擎/声线/参数）
+│   ├── asr.js            # ASR（后端/模型/GPU）
+│   ├── llm.js            # LLM（模型/key/测试）
+│   ├── live2d.js         # Live2D（模型/取景）
+│   ├── maintenance.js    # 数据 / 开机自启 / 窗口大小
+│   ├── assets.js         # 「资源」区（IIFE）：状态、拖放、批量确认、安装进度
+│   ├── data.js           # 「数据/也算对」（IIFE）
+│   ├── memory.js         # 「记忆」查看/编辑/删除（IIFE）
+│   └── shortcuts.js      # 「快捷键」（IIFE）
 ├── ui.css                    # 共用设计令牌（圆角 / 配色 / 字号 / 间距）
 ├── preload-settings.js       # 设置窗口专用桥
 ├── CHANGELOG.md              # 版本变更记录
@@ -162,11 +164,11 @@ pet.html
 pet.js
   = pet.js + renderer/**
 
-settings.html
-  = settings.html
+settings/index.html
+  = settings/index.html
 
-settings.js
-  = settings.js + settings-*.js
+settings/app.js
+  = settings/app.js + settings/*.js
 
 ui.css
   = ui.css
@@ -199,16 +201,16 @@ agent/**                52 个模块（LLM/人格/词典/数据/平台）
 preload*.js              2 个桥
 pet.html / pet.js        渲染层入口
 renderer/**             10 个模块
-settings.html            设置页
-settings.js              36   设置编排
-settings-core.js          29   DOM 工具 + 模块注册表
-settings-tts.js          234
-settings-asr.js          237
-settings-llm.js          184
-settings-live2d.js        66
-settings-maintenance.js  133
-settings-assets.js       208   资源状态/拖放/安装面板
-settings-data/memory/shortcuts.js
+settings/index.html            设置页
+settings/app.js              36   设置编排
+settings/core.js          29   DOM 工具 + 模块注册表
+settings/tts.js          234
+settings/asr.js          237
+settings/llm.js          184
+settings/live2d.js        66
+settings/maintenance.js  133
+settings/assets.js       208   资源状态/拖放/安装面板
+settings/data.js / settings/memory.js / settings/shortcuts.js
 ui.css                   设计令牌
 ```
 
@@ -234,7 +236,7 @@ renderer/modes.js     575
 main/ipc/pet.js       332
 agent/asset-install.js 302
 main/ipc/config.js    315
-settings-assets.js    208
+settings/assets.js    208
 ```
 
 这些模块职责仍然单一，暂时不再拆。
@@ -246,8 +248,8 @@ settings-assets.js    208
 ### 数据流
 
 ```text
-settings.html #assetDropZone
-  → settings-assets.js
+settings/index.html #assetDropZone
+  → settings/assets.js
       filePath(file)          preload 用 webUtils 取本地路径
       previewAsset({src})     主进程只识别，不写盘
   → main/ipc/config.js
@@ -330,7 +332,7 @@ ASR 自检的 loading 只表示“已安装、服务加载中”，不是 ready
 
 ## 页面 CSP
 
-`pet.html` / `settings.html` 都带严格 CSP：
+`pet.html` / `settings/index.html` 都带严格 CSP：
 
 ```
 default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
@@ -373,7 +375,7 @@ Windows 的 `netstat -ano` 输出（IPv4/IPv6、LISTENING/ESTABLISHED）和 mac 
 `npm run scan` 的 `[11] 打包覆盖` 会拦住这类问题：
 
 - 扫 `main.js` / `agent/*.js` / `main/*.js` 里的相对 `require`
-- 扫 `pet.html` / `settings.html` 的 `<script src>` / `<link href>`
+- 扫 `pet.html` / `settings/index.html` 的 `<script src>` / `<link href>`
 - 每个都要能被 `build.files` 的 glob 匹配到（支持 `**`、`*`、`?` 和 `!` 排除）
 
 `node_modules/` 由 electron-builder 自动带，不检查。
@@ -503,8 +505,8 @@ decide({
    `state.js` 的唯一声明维持；跨文件状态已集中到 `state.js`，`scan [14]` 现在会检查
    pet 页与 settings 共享作用域的顶层重复声明（支持缩进/正则字面量），
    IIFE 模块内部不参与跨文件比较。
-2. **设置页核心已经收小**：`settings.js` 只做注册、保存、关闭；TTS/ASR/LLM/Live2D/
-   维护/资源分别在自己的模块里。当前较大的设置模块是 `settings-assets.js`（拖放与安装 UI）。
+2. **设置页核心已经收小**：`settings/app.js` 只做注册、保存、关闭；TTS/ASR/LLM/Live2D/
+   维护/资源分别在自己的模块里。当前较大的设置模块是 `settings/assets.js`（拖放与安装 UI）。
 3. **`agent/llm.js` 仍是门面 + 编排**（642 行，40+ exports）：enrich 缓存已拆到 `agent/enrich.js`；
    provider 配置、chat、pair、词/句型转发仍在一起，下一次改到哪块再拆哪块。
 4. **设置/渲染层测试仍偏薄**：agent 和资源安装有单测；设置窗口有静态结构测试和

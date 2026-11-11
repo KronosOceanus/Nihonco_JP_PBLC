@@ -669,4 +669,4 @@ npm run build:win:portable
 - [ ] 真机点一次「识别加速 → 重装/取消」的 UI（自动化点不了界面）
 - [x] ~~Windows 图标~~ —— `assets/icon.ico` 已接入 `build.win.icon`；待 Windows 实机确认 exe/NSIS/任务栏显示。
 - [ ] 代码签名（SmartScreen 会拦）
-- [ ] `settings.js` 的 `renderAsr` 结尾有一段不可达死代码（上游遗留）
+- [ ] `settings/asr.js` 的 `renderAsr` 结尾没有不可达死代码

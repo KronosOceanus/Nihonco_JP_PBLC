@@ -47,7 +47,7 @@ SRS + 错题本
 × 引入 TypeScript / 打包器
 × 全仓 Prettier
 × 把 155 个空 catch 全部治理
-× 把 settings.js 继续拆到 200 行以内
+× 把 settings/app.js 继续拆到 200 行以内
 × 把 llm.js 拆成 5 个文件
 × 把 scan 做成完整 JS 解析器
 ```
@@ -157,7 +157,7 @@ lint 如果加：
 
 ```
 · renderer 仍是经典脚本
-· settings.js 已拆成 settings-*，当前较大的是 settings-assets.js
+· settings 已按模块拆到 settings/*，当前较大的是 settings/assets.js
 · llm.js 642 行
 · 没有 lint/format
 · 空 catch 较多

@@ -42,7 +42,7 @@ function checkCrossModule() {
 
   // 自动发现 agent/*.js，别名从源码里的 require 绑定推断（不再手工维护清单）
   const agentFiles = fs.readdirSync(rel("agent")).filter((f) => f.endsWith(".js")).sort();
-  const allSources = ["main.js", "preload.js", "preload-settings.js", "pet.js", "settings.js",
+  const allSources = ["main.js", "preload.js", "preload-settings.js", "pet.js", "settings/app.js",
     ...agentFiles.map((f) => `agent/${f}`), ...fs.readdirSync(rel("tools")).filter((f) => f.endsWith(".mjs")).map((f) => `tools/${f}`)];
   const sources = {};
   for (const f of allSources) { try { sources[f] = read(f); } catch (e) {} }
@@ -153,7 +153,7 @@ function checkPreload() {
   console.log("\n[3] preload 暴露面");
   const surfaces = [
     { preload: "preload.js", api: "pet", consumer: "pet.js" },
-    { preload: "preload-settings.js", api: "cfg", consumer: "settings.js" },
+    { preload: "preload-settings.js", api: "cfg", consumer: "settings/app.js" },
   ];
   let count = 0;
   for (const { preload, api, consumer } of surfaces) {
@@ -277,9 +277,13 @@ function rendererJs() {
 
 function checkDomIds() {
   console.log("\n[7] DOM id 引用");
+  const settingsJs = (() => {
+    try { return fs.readdirSync(rel("settings")).filter((f) => f.endsWith(".js")).sort().map((f) => `settings/${f}`); }
+    catch (e) { return ["settings/app.js"]; }
+  })();
   const pairs = [
     { html: "pet.html", js: ["pet.js", ...rendererJs()] },
-    { html: "settings.html", js: ["settings.js"] },
+    { html: "settings/index.html", js: settingsJs },
   ];
   let count = 0;
 
@@ -397,10 +401,12 @@ function checkPackCoverage() {
   }
 
   // ② 页面引用（script src / link href）；node_modules 由 electron-builder 自动带
-  for (const html of ["pet.html", "settings.html"]) {
+  for (const html of ["pet.html", "settings/index.html"]) {
     const src = read(html);
-    for (const m of src.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)) need.add(m[1]);
-    for (const m of src.matchAll(/<link[^>]*\bhref="([^"]+)"/g)) need.add(m[1]);
+    const base = path.posix.dirname(html);
+    const resolveRef = (u) => path.posix.normalize(path.posix.join(base, u));
+    for (const m of src.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)) need.add(resolveRef(m[1]));
+    for (const m of src.matchAll(/<link[^>]*\bhref="([^"]+)"/g)) need.add(resolveRef(m[1]));
   }
 
   // ③ 打包的 .whisper 只允许：两个平台的二进制 + 运行必需的 DLL + 181MB 小模型
@@ -519,7 +525,7 @@ function checkInjectBoundary() {
 function checkCsp() {
   console.log("\n[10] 页面 CSP");
   const before = problems.length;
-  for (const f of ["pet.html", "settings.html"]) {
+  for (const f of ["pet.html", "settings/index.html"]) {
     const html = read(f);
     if (!/Content-Security-Policy/i.test(html)) { bad(`${f} 没有 CSP meta`); continue; }
     if (!/script-src 'self'/i.test(html)) bad(`${f} 的 CSP 应限制 script-src 'self'`);
@@ -536,7 +542,7 @@ function checkCsp() {
 /* ---------------- 6. 死函数 ---------------- */
 function checkDeadFunctions() {
   console.log("\n[6] 死函数（启发式）");
-  const files = ["main.js", "pet.js", "settings.js",
+  const files = ["main.js", "pet.js", "settings/app.js",
                  ...fs.readdirSync(rel("agent")).filter((f) => f.endsWith(".js")).map((f) => `agent/${f}`)];
   const allSrc = Object.fromEntries(files.map((f) => [f, read(f)]));
   let count = 0;
@@ -616,11 +622,11 @@ function checkRendererGlobals() {
       shared: true,
       files: ["pet.js", ...fs.readdirSync(rel("renderer")).filter((f) => f.endsWith(".js")).sort().map((f) => `renderer/${f}`)],
     },
-    { name: "settings 共享作用域", shared: true, files: ["settings.js"] },
+    { name: "settings 共享作用域", shared: true, files: ["settings/app.js"] },
     {
       name: "settings IIFE（内部隔离）",
       shared: false,
-      files: ["settings-assets.js", "settings-data.js", "settings-shortcuts.js", "settings-memory.js"],
+      files: ["settings/assets.js", "settings/data.js", "settings/shortcuts.js", "settings/memory.js"],
     },
   ];
   let dup = 0, total = 0;

@@ -7,7 +7,7 @@ import path from "node:path";
  * 这条测试和 npm run scan 的 [10] 互补：scan 看的是同一份文件，但 CI 里只有 npm test。 */
 
 const ROOT = path.resolve(import.meta.dirname, "..");
-const pages = ["pet.html", "settings.html"];
+const pages = ["pet.html", "settings/index.html"];
 
 for (const page of pages) {
   const html = fs.readFileSync(path.join(ROOT, page), "utf8");

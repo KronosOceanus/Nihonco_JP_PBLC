@@ -179,7 +179,7 @@ Invoke-Item "$env:TEMP\nihonco-exe-icon.png"
 包内容检查：
 
 ```powershell
-npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings-memory
+npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings\\memory
 npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr persona
 ```
 
@@ -225,9 +225,9 @@ lite 产物名带 `lite`。full 产物沿用原名字。
 确认新设置模块进包：
 
 ```powershell
-npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings-data
-npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings-shortcuts
-npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings-memory
+npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings\\data
+npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings\\shortcuts
+npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings\\memory
 ```
 
 三条都要有输出。

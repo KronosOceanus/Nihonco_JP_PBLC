@@ -1,5 +1,5 @@
 /* 设置窗口：资源区（模型 / Core / VOICEVOX）
- * 独立成文件，避免继续堆进 settings.js；用 IIFE 避免和 settings.js 的顶层声明冲突。
+ * 独立成文件，避免继续堆进 settings/app.js；用 IIFE 避免和 settings/app.js 的顶层声明冲突。
  */
 (function () {
   const $ = (id) => document.getElementById(id);

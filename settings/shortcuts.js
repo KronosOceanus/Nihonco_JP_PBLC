@@ -1,4 +1,4 @@
-/* 设置窗口：快捷键改键（独立 IIFE，避免和 settings.js 顶层重名） */
+/* 设置窗口：快捷键改键（独立 IIFE，避免和 settings/app.js 顶层重名） */
 (function () {
   const $ = (id) => document.getElementById(id);
 

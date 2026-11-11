@@ -233,7 +233,7 @@ function openSettings() {
       sandbox: true,
     },
   });
-  settingsWin.loadURL(`http://127.0.0.1:${windowSvc.getStaticPort()}/settings.html`);
+  settingsWin.loadURL(`http://127.0.0.1:${windowSvc.getStaticPort()}/settings/index.html`);
   settingsWin.on('closed', () => { settingsWin = null; });
   return settingsWin;
 }

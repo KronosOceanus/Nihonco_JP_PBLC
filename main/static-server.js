@@ -20,7 +20,7 @@ const MIME = {
 
 /* 静态文件白名单：渲染层只需要这几个资源，其余一律 404
  * （防止 /.env、data/*.json、.voice/rec-*.wav 被 HTTP 读到） */
-const ALLOW_EXACT = new Set(["/", "/index.html", "/pet.html", "/pet.js", "/settings.html", "/settings.js", "/settings-core.js", "/settings-assets.js", "/settings-shortcuts.js", "/settings-data.js", "/settings-memory.js", "/settings-tts.js", "/settings-asr.js", "/settings-llm.js", "/settings-live2d.js", "/settings-maintenance.js", "/ui.css", "/favicon.ico"]);
+const ALLOW_EXACT = new Set(["/", "/index.html", "/pet.html", "/pet.js", "/settings/index.html", "/settings/app.js", "/settings/core.js", "/settings/assets.js", "/settings/shortcuts.js", "/settings/data.js", "/settings/memory.js", "/settings/tts.js", "/settings/asr.js", "/settings/llm.js", "/settings/live2d.js", "/settings/maintenance.js", "/ui.css", "/favicon.ico"]);
 const ALLOW_PREFIX = [
   "/.voice/cache/",
   "/lib/",
