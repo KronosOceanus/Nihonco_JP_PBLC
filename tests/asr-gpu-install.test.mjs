@@ -52,6 +52,16 @@ test("本地包安装：解压 → staging → 落位，只拷清单内文件，
   assert.deepEqual(phases, ["start", "local", "extract", "copy", "done"]);
 });
 
+test("writeActive 重置 GPU 失败计数；status 能读出计数", () => {
+  const asrDir = mkAsrDir();
+  fs.writeFileSync(path.join(asrDir, "active.json"),
+    JSON.stringify({ backend: "cuda-12.4", gpuFailures: 2, gpuFallbackPermanent: false }));
+  assert.equal(mod.status(asrDir).gpuFailures, 2);
+  mod.writeActive(asrDir, "cuda-12.4");
+  assert.equal(mod.status(asrDir).gpuFailures, 0);
+  assert.equal(mod.status(asrDir).gpuFallbackPermanent, false);
+});
+
 test("中途取消（copy 阶段）：报 cancelled，已装目录原样保留，临时目录清空", async () => {
   const asrDir = mkAsrDir();
   // 先装一遍，再补一个标记文件，取消后它必须还在

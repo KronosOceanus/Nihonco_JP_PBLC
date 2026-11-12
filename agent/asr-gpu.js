@@ -91,7 +91,7 @@ function readActive(asrDir) {
 function writeActive(asrDir, id) {
   fs.mkdirSync(asrDir, { recursive: true });
   fs.writeFileSync(path.join(asrDir, "active.json"),
-    JSON.stringify({ backend: id, at: new Date().toISOString() }, null, 2));
+    JSON.stringify({ backend: id, gpuFailures: 0, gpuFallbackPermanent: false, lastError: "", at: new Date().toISOString() }, null, 2));
 }
 
 /** 后端是否装全了（exe + 必需 dll 都在） */
@@ -118,11 +118,15 @@ function dirSizeMB(dir) {
 function status(asrDir) {
   const gpu = detectGpu();
   const want = recommend(gpu);
+  let st = {};
+  try { st = JSON.parse(fs.readFileSync(path.join(asrDir, "active.json"), "utf8")) || {}; } catch (e) {}
   return {
     platform: process.platform,
     gpu,
     recommend: want,
     active: readActive(asrDir),
+    gpuFailures: Math.max(0, Number(st.gpuFailures) || 0),
+    gpuFallbackPermanent: !!st.gpuFallbackPermanent,
     installed: Object.keys(RELEASES).filter((id) => installed(asrDir, id))
       .map((id) => ({ id, mb: dirSizeMB(path.join(asrDir, id)) })),
     options: Object.entries(RELEASES).map(([id, r]) => ({ id, approxMB: r.approxMB, needDriver: r.needDriver })),

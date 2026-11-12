@@ -602,9 +602,22 @@ whisper 源码和模型现在由 `tools/setup-whisper.mjs` 做 sha256 校验。
 内置 CPU 版                                  →  永远兜底
 ```
 
-GPU 后端**起不来就自动回落**：spawn 失败（exe 损坏/被杀软隔离/不是合法 PE）或 60 秒内
-`/health` 不通（驱动被换、显卡被独占、远程桌面）→ 杀掉子进程、把 `active.json` 改成
-`cpu`、重来一次。日志写 `⚠ … 回落到 CPU（只慢，不会没功能）`。
+GPU 后端**起不来就回落 CPU，连续失败 3 次才永久固定 CPU**：
+
+```text
+第 1 次失败 → 本次 CPU，active 仍记 GPU，下次启动再试
+第 2 次失败 → 本次 CPU，下次仍试
+第 3 次失败 → active 写 cpu，之后不再自动试 GPU
+```
+
+触发条件：
+
+```text
+spawn 失败（exe 损坏 / 被杀软隔离 / 不是合法 PE）
+60 秒内 /health 不通（驱动被换 / 显卡被独占 / 远程桌面）
+```
+
+成功启动一次 GPU 后，失败计数清零。日志会写连续失败次数。
 
 `/health` 会回报 `backend` 和 `backendHome`，方便排查当前跑的是哪一版：
 

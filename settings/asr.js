@@ -92,10 +92,13 @@ async function renderAsrEngine() {
   if (!gpu.found) {
     $("gpuInfo").textContent = `没检测到 NVIDIA 显卡 → 走 CPU 版（${gpu.reason || "?"}）`;
   } else {
+    const failText = st.gpuFallbackPermanent
+      ? "｜GPU 已连续失败 3 次，固定使用 CPU"
+      : (st.gpuFailures ? `｜GPU 连续失败 ${st.gpuFailures}/3` : "");
     $("gpuInfo").textContent =
       `${gpu.name}｜驱动 ${gpu.driver}｜显存 ${gpu.vramMB} MB` +
       `｜当前 ${now}｜已装 ${instText}` +
-      (st.recommend ? "" : "｜驱动太旧，只能 CPU");
+      (st.recommend ? "" : "｜驱动太旧，只能 CPU") + failText;
   }
   $("gpuInstall").disabled = engineBusy || !st.recommend;
   $("gpuInstall").textContent = inst.length ? "重装" : "下载";

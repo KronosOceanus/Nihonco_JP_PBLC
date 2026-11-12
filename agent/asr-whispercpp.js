@@ -45,6 +45,7 @@ function log(...a) { console.log('[asr]', ...a); }
  */
 const ASR_DIR = process.env.NIHONCO_ASR_DIR || '';
 const GPU_BACKEND_IDS = ['cuda-12.4', 'cuda-11.8'];
+const MAX_GPU_FAILURES = 3;
 
 /** 内置（CPU）后端目录 */
 function baseHome() {
@@ -74,20 +75,38 @@ function detectBackends() {
   return list;
 }
 
-function readActiveBackend() {
+function readBackendState() {
   const envWant = String(process.env.NIHONCO_ASR_BACKEND || '').trim().toLowerCase();
-  if (envWant) return envWant;
-  try {
-    return String(JSON.parse(fs.readFileSync(path.join(ASR_DIR, 'active.json'), 'utf8')).backend || '').toLowerCase();
-  } catch (e) { return ''; }
+  let state = {};
+  try { state = JSON.parse(fs.readFileSync(path.join(ASR_DIR, 'active.json'), 'utf8')) || {}; } catch (e) {}
+  return {
+    backend: envWant || String(state.backend || '').toLowerCase(),
+    envForced: !!envWant,
+    gpuFailures: Math.max(0, Number(state.gpuFailures) || 0),
+    gpuFallbackPermanent: !!state.gpuFallbackPermanent,
+    lastError: String(state.lastError || ''),
+  };
 }
 
-function writeActiveBackend(id) {
+function readActiveBackend() {
+  const s = readBackendState();
+  if (s.gpuFallbackPermanent && !s.envForced) return 'cpu';
+  return s.backend;
+}
+
+function writeBackendState(patch = {}) {
   if (!ASR_DIR) return;
   try {
+    const old = readBackendState();
+    const next = {
+      backend: patch.backend != null ? String(patch.backend) : (old.backend || 'cpu'),
+      gpuFailures: patch.gpuFailures != null ? Number(patch.gpuFailures) : old.gpuFailures,
+      gpuFallbackPermanent: patch.gpuFallbackPermanent != null ? !!patch.gpuFallbackPermanent : old.gpuFallbackPermanent,
+      lastError: patch.lastError != null ? String(patch.lastError) : old.lastError,
+      at: new Date().toISOString(),
+    };
     fs.mkdirSync(ASR_DIR, { recursive: true });
-    fs.writeFileSync(path.join(ASR_DIR, 'active.json'),
-      JSON.stringify({ backend: id, at: new Date().toISOString() }, null, 2));
+    fs.writeFileSync(path.join(ASR_DIR, 'active.json'), JSON.stringify(next, null, 2));
   } catch (e) {}
 }
 
@@ -254,12 +273,21 @@ function killChild() {
   ready = false;
 }
 
-/** GPU 后端起不来就回落 CPU：驱动被换/显卡被独占/远程桌面都能自愈 */
+/** GPU 后端起不来就回落 CPU：连续 3 次失败才永久用 CPU */
 async function fallbackToCpu(why) {
   const from = backend().id;
-  log(`⚠ ${why} → ${from} 后端不可用，回落到 CPU（只慢，不会没功能）`);
+  if (from === 'cpu') return false;
+  const state = readBackendState();
+  const failures = (state.gpuFailures || 0) + 1;
+  const permanent = failures >= MAX_GPU_FAILURES;
+  log(`⚠ ${why} → ${from} 后端不可用，回落到 CPU（连续失败 ${failures}/${MAX_GPU_FAILURES}${permanent ? '，以后固定 CPU' : '，下次仍尝试 GPU'}）`);
   killChild();
-  writeActiveBackend('cpu');
+  writeBackendState({
+    backend: permanent ? 'cpu' : from,
+    gpuFailures: failures,
+    gpuFallbackPermanent: permanent,
+    lastError: why,
+  });
   selectBackend('cpu');
   return waitReady(45000, false);
 }
@@ -276,7 +304,12 @@ async function waitReady(timeoutMs = 60000, allowFallback = true) {
     }
     try {
       const r = await fetch(`http://127.0.0.1:${WPORT}/health`, { signal: AbortSignal.timeout(1000) });
-      if (r.ok) { ready = true; log(`就绪 backend=${backend().id} model=${path.basename(modelPath || '')} ${Date.now() - t0}ms`); return true; }
+      if (r.ok) {
+        ready = true;
+        if (backend().id !== 'cpu') writeBackendState({ backend: backend().id, gpuFailures: 0, gpuFallbackPermanent: false, lastError: '' });
+        log(`就绪 backend=${backend().id} model=${path.basename(modelPath || '')} ${Date.now() - t0}ms`);
+        return true;
+      }
     } catch (e) { /* 还没起来 */ }
     await new Promise((r) => setTimeout(r, 400));
   }
@@ -395,6 +428,8 @@ function handle(req, res) {
       engine: 'whisper.cpp',
       backend: backend().id,
       backendHome: backend().home,
+      gpuFailures: readBackendState().gpuFailures,
+      gpuFallbackPermanent: readBackendState().gpuFallbackPermanent,
       model: name,
       requested: want || '(未设置)',
       fallback: !!name && !name.includes(wantName),
