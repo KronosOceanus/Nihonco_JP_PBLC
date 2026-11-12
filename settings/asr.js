@@ -112,35 +112,43 @@ function renderAsrMeta(cfg) {
 }
 
 /* ---------------- GPU 加速版 whisper.cpp（Windows CUDA） ---------------- */
-let engineBusy = false;
-const fmtMB = (n) => (Number(n || 0) / 1024 / 1024).toFixed(1) + " MB";
+let currentAsrEngine = "cpu";
 
 async function renderAsrEngine() {
-  const row = $("gpuRow");
-  if (!row) return;
   let st = null;
   try { st = await window.cfg.asrEngine(); } catch (e) {}
-  if (!st || st.platform !== "win32") { row.style.display = "none"; return; }
-  row.style.display = "";
-  const gpu = st.gpu || {};
-  const now = st.active || "cpu";
-  const inst = st.installed || [];
-  const instText = inst.length ? inst.map((x) => `${x.id}（${x.mb} MB）`).join(" / ") : "未装";
-  if (!gpu.found) {
-    $("gpuInfo").textContent = `没检测到 NVIDIA 显卡 → 走 CPU 版（${gpu.reason || "?"}）`;
-  } else {
-    const failText = st.gpuFallbackPermanent
-      ? "｜GPU 已连续失败 3 次，固定使用 CPU"
-      : (st.gpuFailures ? `｜GPU 连续失败 ${st.gpuFailures}/3` : "");
-    $("gpuInfo").textContent =
-      `${gpu.name}｜驱动 ${gpu.driver}｜显存 ${gpu.vramMB} MB` +
-      `｜当前 ${now}｜已装 ${instText}` +
-      (st.recommend ? "" : "｜驱动太旧，只能 CPU") + failText;
+  const isWin = !!st && st.platform === "win32";
+  for (const id of ["asrActualEngineRow", "whisperEngineRow", "whisperModelRow"]) {
+    const el = $(id);
+    if (el) el.style.display = isWin ? "" : "none";
   }
-  $("gpuInstall").disabled = engineBusy || !st.recommend;
-  $("gpuInstall").textContent = inst.length ? "重装" : "下载";
-  $("gpuRemove").style.display = inst.length ? "" : "none";
-  $("gpuRemove").disabled = engineBusy;
+  if (!isWin) return;
+
+  const installed = new Set((st.installed || []).map((x) => x.id));
+  const sel = $("asrActualEngine");
+  if (sel) {
+    sel.innerHTML = "";
+    for (const [id, label] of [["cuda-12.4", "CUDA 12.4"], ["cuda-11.8", "CUDA 11.8"], ["cpu", "CPU"]]) {
+      const o = document.createElement("option");
+      o.value = id;
+      o.textContent = label + ((id !== "cpu" && !installed.has(id)) ? "（未安装）" : "");
+      o.disabled = id !== "cpu" && !installed.has(id);
+      sel.appendChild(o);
+    }
+    currentAsrEngine = installed.has(st.active) ? st.active : "cpu";
+    sel.value = currentAsrEngine;
+  }
+
+  const cudaBtn = $("dlWhisperCuda");
+  if (cudaBtn) {
+    const rec = st.recommend || "";
+    cudaBtn.disabled = !rec;
+    cudaBtn.dataset.resource = rec === "cuda-11.8" ? "whisper-cuda-11.8" : "whisper-cuda-12.4";
+    cudaBtn.textContent = rec === "cuda-11.8" ? "CUDA 11.8" : (rec === "cuda-12.4" ? "CUDA 12.4" : "CUDA 版");
+    cudaBtn.title = rec
+      ? `下载 ${rec} 引擎`
+      : `没有检测到可用的 NVIDIA CUDA 驱动：${(st.gpu && st.gpu.reason) || "驱动太旧或未安装"}`;
+  }
 }
 
 function bindAsrForm() {
@@ -192,76 +200,34 @@ function bindAsrForm() {
 }
 
 function bindAsrEngine() {
-  const btn = $("gpuInstall");
-  if (!btn) return;
-
-  const setCancel = (show) => { const c = $("gpuCancel"); if (c) c.style.display = show ? "" : "none"; };
-  const hideProg = (ms = 1600) => {
-    setTimeout(() => {
-      const wrap = $("gpuProgRow"), bar = $("gpuProg");
-      setCancel(false);
-      if (!wrap) return;
-      wrap.style.display = "none";
-      if (bar) bar.style.width = "0%";
-    }, ms);
+  const links = {
+    dlWhisperCuda: "whisper-cuda-12.4",
+    dlWhisperCpu: "whisper-cpu",
+    dlWhisperModel: "whisper-model",
   };
+  for (const [id, key] of Object.entries(links)) {
+    const el = $(id);
+    if (el) el.addEventListener("click", () => {
+      const target = id === "dlWhisperCuda" ? (el.dataset.resource || key) : key;
+      if (!el.disabled) window.cfg.openResource(target).catch(() => {});
+    });
+  }
 
-  window.cfg.onAsrEngineProgress((p) => {
-    const wrap = $("gpuProgRow"), bar = $("gpuProg"), txt = $("gpuProgText");
-    if (!p || !wrap || !bar || !txt) return;
-    wrap.style.display = "";
-    if (p.phase === "start") {
-      setCancel(true); bar.style.width = "1%";
-      txt.textContent = `准备中…（约 ${p.approxMB || "?"} MB）`;
-    } else if (p.phase === "local") {
-      setCancel(true); bar.style.width = "70%";
-      txt.textContent = "使用本地包：" + String(p.file || "").split(/[\\/]/).pop();
-    } else if (p.phase === "download") {
-      setCancel(true);
-      const pct = p.total ? Math.min(100, Math.round((p.received / p.total) * 100)) : 0;
-      bar.style.width = pct + "%";
-      txt.textContent = `${fmtMB(p.received)} / ${p.total ? fmtMB(p.total) : "?"}  ${pct}%`;
-    } else if (p.phase === "extract") { setCancel(true); txt.textContent = "解压中…"; bar.style.width = "78%"; }
-    else if (p.phase === "copy") { setCancel(true); txt.textContent = "写入文件…"; bar.style.width = "90%"; }
-    else if (p.phase === "retry") { txt.textContent = "换源重试…" + (p.msg ? `（${p.msg}）` : ""); }
-    else if (p.phase === "cancel") { txt.textContent = "取消中…"; setCancel(false); }
-    else if (p.phase === "cancelled") { bar.style.width = "0%"; txt.textContent = "已取消"; setCancel(false); hideProg(); }
-    else if (p.phase === "error") { bar.style.width = "0%"; txt.textContent = "失败：" + p.msg; setCancel(false); }
-    else if (p.phase === "done" || p.phase === "installed") {
-      bar.style.width = "100%"; txt.textContent = "完成"; setCancel(false); hideProg();
-    }
-  });
-
-  btn.addEventListener("click", async () => {
-    engineBusy = true; btn.disabled = true;
-    setCancel(true);
-    $("gpuProgRow").style.display = "";
-    $("gpuProg").style.width = "0%";
-    $("gpuProgText").textContent = "准备中…";
+  const apply = $("applyAsrEngine");
+  if (apply) apply.addEventListener("click", async () => {
+    const sel = $("asrActualEngine");
+    if (!sel || sel.value === currentAsrEngine) return;
+    apply.disabled = true;
+    flash("切换识别引擎…", 0);
     try {
-      const r = await window.cfg.asrEngineInstall();
-      if (r && r.cancelled) flash("已取消");
-      else if (r && r.ok === false) flash("下载失败：" + (r.error || "未知错误"), 3500);
-      else flash("GPU 版已启用（识别约 0.15 s）", 3000);
-    } catch (e) { flash("下载失败：" + (e.message || e), 3500); }
-    engineBusy = false;
-    setCancel(false);
-    await renderAsrEngine();
-    if (typeof cfg() !== "undefined") renderAsr(cfg()).catch(() => {});
-  });
-
-  const cancelBtn = $("gpuCancel");
-  if (cancelBtn) cancelBtn.addEventListener("click", async () => {
-    $("gpuProgText").textContent = "取消中…";
-    try { await window.cfg.asrEngineCancel(); } catch (e) {}
-  });
-
-  $("gpuRemove").addEventListener("click", async () => {
-    engineBusy = true;
-    try { await window.cfg.asrEngineRemove("cuda-12.4"); flash("已卸载，回到 CPU 版"); }
-    catch (e) { flash("卸载失败：" + (e.message || e)); }
-    engineBusy = false;
-    await renderAsrEngine();
+      const r = await window.cfg.asrEngineSwitch(sel.value);
+      if (!r || r.ok === false) throw new Error((r && r.error) || "切换失败");
+      flash("识别引擎已切换");
+      await renderAsrEngine();
+    } catch (e) {
+      flash("切换失败：" + (e && e.message || e), 3500);
+      if (sel) sel.value = currentAsrEngine;
+    } finally { apply.disabled = false; }
   });
 }
 

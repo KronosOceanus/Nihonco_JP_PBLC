@@ -131,6 +131,10 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     core: 'https://www.live2d.com/en/sdk/download/web/',
     voicevox: 'https://voicevox.hiroshiba.jp/',
     aivis: 'https://aivis-project.com/speech/',
+    'whisper-cuda-12.4': 'https://github.com/ggml-org/whisper.cpp/releases/download/b5454/whisper-bin-win-cuda-12.4.0-x64.zip',
+    'whisper-cuda-11.8': 'https://github.com/ggml-org/whisper.cpp/releases/download/b5454/whisper-bin-win-cuda-11.8.0-x64.zip',
+    'whisper-cpu': 'https://github.com/ggml-org/whisper.cpp/releases/download/b5454/whisper-bin-x64.zip',
+    'whisper-model': 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin',
   };
 
   settingsHandle('cfg:tts-engine', () => ({ ok: true, engine: tts.engineName() }));

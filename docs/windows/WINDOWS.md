@@ -1,6 +1,6 @@
 # Windows：差异、安装与打包
 
-> 当前验收版本：**v0.7.24**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
+> 当前验收版本：**v0.7.26**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
 >
 > `npm run build:win` 默认是 lite（不含模型/Core）。本项目只提供 lite 构建。
 >
@@ -88,7 +88,7 @@ Windows 不跑 `asr.py`。实际实现是 `agent/asr-whispercpp.js`：主进程 
 - 模型：`ggml-small-q5_1.bin`（181 MB），`npm run setup:whisper` 下载
 - 二进制：`whisper-server.exe` + `whisper.dll` / `ggml*.dll`，从 whisper.cpp b5454 解压到 `.whisper/`
 - 热词：主进程把当天批次 + 错题本拼成 `prompt`，整词截断到 60 字；服务端作为 `initial_prompt`
-- GPU：设置 → ASR → 识别加速，下载 CUDA 版（可选，缺 `ggml-cuda.dll` 会静默回 CPU）
+- GPU：设置 → ASR → 实际引擎切到 CUDA（可选；CUDA 运行包从 Whisper 引擎下载链接获取后拖入）；缺 `ggml-cuda.dll` 会静默回 CPU
 
 旧方案（faster-whisper）已放弃：需要 Python 环境，和“免 Python”的移植目标冲突。
 
@@ -665,7 +665,7 @@ npm run build:win:portable
 
 ### 已知待办
 
-- [ ] 真机点一次「识别加速 → 重装/取消」的 UI（自动化点不了界面）
+- [ ] 真机切换一次「实际引擎」的 CPU / CUDA 选项
 - [x] ~~Windows 图标~~ —— `assets/icon.ico` 已接入 `build.win.icon`；待 Windows 实机确认 exe/NSIS/任务栏显示。
 - [ ] 代码签名（SmartScreen 会拦）
 - [ ] `settings/asr.js` 的 `renderAsr` 结尾没有不可达死代码
