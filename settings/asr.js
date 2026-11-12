@@ -119,23 +119,27 @@ async function renderAsrEngine() {
   try { st = await window.cfg.asrEngine(); } catch (e) {}
   try { opt = await window.cfg.asrOptions(); } catch (e) {}
   const isWin = !!st && st.platform === "win32";
-  for (const id of ["asrActualEngineRow", "whisperCudaRow", "whisperCpuRow", "whisperModelRow"]) {
+  // 模型下载在 mac 也要显示；CUDA/CPU 引擎下载和实际引擎只属于 Windows。
+  for (const id of ["asrActualEngineRow", "whisperCudaRow", "whisperCpuRow"]) {
     const el = $(id);
     if (el) el.style.display = isWin ? "" : "none";
   }
-  if (!isWin) return;
+  const modelRow = $("whisperModelRow");
+  if (modelRow) modelRow.style.display = "";
 
-  const installed = new Set((st.installed || []).map((x) => x.id));
   const mark = (id, ok) => {
     const el = $(id);
     if (!el) return;
     el.textContent = ok ? "已找到" : "未找到";
     el.style.color = ok ? "var(--ok, #7ee2a8)" : "var(--text-dim)";
   };
+  mark("statWhisperModel", !!(opt && opt.wcppModels && opt.wcppModels.length));
+  if (!isWin) return;
+
+  const installed = new Set((st.installed || []).map((x) => x.id));
   const rec = st.recommend || "";
   mark("statWhisperCuda", !!rec && installed.has(rec));
   mark("statWhisperCpu", !!(opt && opt.wcppBin));
-  mark("statWhisperModel", !!(opt && opt.wcppModels && opt.wcppModels.length));
   const sel = $("asrActualEngine");
   if (sel) {
     sel.innerHTML = "";

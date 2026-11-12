@@ -244,7 +244,7 @@ settings/assets.js    208
 
 ## 资源拖放安装
 
-设置 → 资源区支持把本地文件/zip 拖进来，安装 Live2D Core、模型、ASR 模型、Aivis 声线和 TTS 引擎。
+设置 → 资源区支持把本地文件/zip 拖进来，安装 Live2D Core、模型、ASR 模型、Whisper CUDA 引擎、Aivis 声线和 TTS 引擎。
 
 ### 数据流
 
@@ -258,6 +258,8 @@ settings/index.html #assetDropZone
       cfg:install-asset
   → agent/asset-install.js
       classify → 解压 → 校验 → 备份 → 原子替换
+  → CUDA zip 走：
+      agent/asr-gpu.js install(localZip) → 停 ASR → staging → active.json → 重启 ASR
   → 安装后自检
       TTS /speakers
       ASR /health

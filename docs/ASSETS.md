@@ -1,6 +1,8 @@
 # 模型与语音资产（需自备）
 
 > 应用内入口：**设置 → 资源**，可以直接打开下面这些官方下载页；
+> Windows 的 Whisper 引擎（CUDA/CPU）和 Whisper 模型在 ASR 行提供下载链接；
+> mac 提供 Whisper 模型下载；
 > TTS 行可以分别设置 VOICEVOX / AivisSpeech 的本地引擎路径；
 > 也支持把单文件/zip 直接拖进资源区安装。
 
@@ -15,6 +17,7 @@
 Live2D Core       live2dcubismcore.min.js
 Live2D 模型       *.model3.json 的 zip
 ASR 模型          ggml-*.bin
+Whisper CUDA 引擎  whisper-server.exe + ggml-cuda.dll 的 zip（Windows）
 Aivis 声线        *.aivmx
 VOICEVOX 引擎     vv-engine/run(.exe) 的 zip
 AivisSpeech 引擎  AivisSpeech-Engine/run(.exe) 的 zip
@@ -37,6 +40,7 @@ AivisSpeech 引擎  AivisSpeech-Engine/run(.exe) 的 zip
 - 目前只支持单文件和 zip，不支持直接拖目录。
 - 安装前会备份，自检失败会尝试回滚。
 - ASR 显示「正在加载」表示已安装但服务尚未 ready。
+- Whisper CUDA zip 按包内的 `ggml-cuda.dll` 与 `cudart64_*.dll` 识别 12.4 / 11.8，安装前停 ASR，安装后重启。
 - Aivis 启动时会从 AivisHub 自动恢复默认声线，删掉默认声线后仍可能回来。
 - AivisSpeech 首次启动会自动下载 BERT 模型（约 1GB+）；设置窗口显示阶段、缓存大小，可取消并回滚 VOICEVOX。BERT 暂不支持拖放安装。
 
@@ -123,6 +127,7 @@ Nihonco 只连接/启动你本机安装的引擎，不打包引擎或模型。
 
 - 默认：`npm run setup:whisper`（whisper.cpp + `ggml-small-q5_1.bin`）
 - mac 可选 mlx：`npm run setup:mlx`
+- 设置 → 资源 → ASR：Windows 可下载 CUDA/CPU 引擎和模型，mac 可下载模型；CUDA zip 也支持拖入安装
 - Windows：见 [windows/WINDOWS.md](windows/WINDOWS.md)
 
 模型下载到 `.whisper/` / `.hf-cache/`，都不进仓库。下载会校验 sha256。
