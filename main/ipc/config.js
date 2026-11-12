@@ -1,6 +1,6 @@
 /* 设置项通道：配置 / API key / provider / 模型 / 开机自启 / 资源链接 */
 module.exports = function registerConfigIpc({ settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
-  app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, ASSET_DIR, USER_DATA, DATA_DIR,
+  app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
 }) {
   const fs = require('fs');
   const path = require('path');
@@ -76,7 +76,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     let dir = '';
     if (id === 'assets') dir = assets.ASSET_DIR;
     else if (id === 'data') dir = DATA_DIR;
-    else if (id === 'whisper') dir = process.env.WHISPER_HOME || path.join(ROOT, '.whisper');
+    else if (id === 'whisper') dir = WHISPER_MODELS_DIR || process.env.NIHONCO_WHISPER_MODELS || path.join(ROOT, '.whisper', 'models');
     else if (id === 'core') {
       const p = assets.find('lib/live2dcubismcore.min.js');
       dir = p ? path.dirname(p) : '';
@@ -94,7 +94,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     }
     else return { ok: false, error: 'unknown path' };
     if (!dir) return { ok: false, error: '未找到目录' };
-    if (id === 'assets' || id === 'data') {
+    if (id === 'assets' || id === 'data' || id === 'whisper') {
       try { fs.mkdirSync(dir, { recursive: true }); } catch (err) {}
     }
     if (!fs.existsSync(dir)) return { ok: false, error: '目录不存在', path: dir };
@@ -201,7 +201,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   });
 
   settingsHandle('cfg:preview-asset', (e, { kind, src } = {}) => {
-    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, app });
+    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app });
   });
 
   settingsHandle('cfg:install-asset', async (e, { kind, src } = {}) => {
@@ -209,7 +209,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     if (kind === 'tts') voiceSvc.stopEngine();
     let r;
     try {
-      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, app });
+      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app });
     } finally {
       if (wasRunning) voiceSvc.startTtsEngine();
     }
@@ -284,17 +284,18 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     const modelPath = path.isAbsolute(active) ? active : assets.find(active);
     const corePath = assets.find('lib/live2dcubismcore.min.js')
       || path.join(ROOT, 'lib', 'live2dcubismcore.min.js');
-    const whisperDir = process.env.WHISPER_HOME || path.join(ROOT, '.whisper');
-    const whisperModels = has(path.join(whisperDir, 'models'))
-      ? fs.readdirSync(path.join(whisperDir, 'models')).filter((f) => f.endsWith('.bin'))
+    const whisperDir = WHISPER_MODELS_DIR || process.env.NIHONCO_WHISPER_MODELS || path.join(ROOT, '.whisper', 'models');
+    const whisperHome = process.env.WHISPER_HOME || path.join(ROOT, '.whisper');
+    const whisperModels = has(whisperDir)
+      ? fs.readdirSync(whisperDir).filter((f) => f.endsWith('.bin'))
       : [];
     return {
       ok: true,
       model: !!modelPath && has(modelPath),
       modelRel: active,
       core: has(corePath),
-      whisper: has(whisperDir),
-      asr: has(whisperDir) && whisperModels.length > 0,
+      whisper: has(whisperHome),
+      asr: has(whisperHome) && whisperModels.length > 0,
       voicevox: has(enginePath('voicevox')),
       aivis: !!enginePath('aivis'),
       engine: tts.engineName(),

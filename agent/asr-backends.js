@@ -13,7 +13,8 @@ const platform = require("./platform");
 
 const ROOT = path.join(__dirname, "..");
 const HF_HUB = path.join(ROOT, ".hf-cache", "hub");
-const WHISPER_MODELS = path.join(ROOT, ".whisper", "models");
+const whisperModelsDir = (root = ROOT) => process.env.NIHONCO_WHISPER_MODELS
+  || path.join(process.env.WHISPER_HOME || path.join(root, ".whisper"), "models");
 const IS_WIN = process.platform === "win32";
 
 function mlxModels(root = ROOT) {
@@ -50,21 +51,26 @@ function mlxModels(root = ROOT) {
 }
 
 function wcppModels(root = ROOT) {
-  // 打包后 .whisper 在 app.asar.unpacked（main.js 会设 WHISPER_HOME）
+  // 用户可写模型目录优先；再扫内置目录（打包后 app.asar.unpacked）
   const home = process.env.WHISPER_HOME || path.join(root, ".whisper");
-  const dir = path.join(home, "models");
-  const out = [];
-  try {
-    for (const f of fs.readdirSync(dir)) {
-      if (!f.endsWith(".bin")) continue;
-      const full = path.join(dir, f);
-      const bytes = fs.statSync(full).size;
-      const mb = Math.round(bytes / 1024 / 1024);
-      out.push({ value: f, label: `${f}（${mb}MB）`, bytes, ready: true });
-    }
-  } catch (e) {}
+  const dirs = [];
+  const add = (d) => { if (d && !dirs.includes(path.resolve(d))) dirs.push(path.resolve(d)); };
+  add(whisperModelsDir(root));
+  add(path.join(home, "models"));
+  const seen = new Map();
+  for (const dir of dirs) {
+    try {
+      for (const f of fs.readdirSync(dir)) {
+        if (!f.endsWith(".bin") || seen.has(f)) continue;
+        const full = path.join(dir, f);
+        const bytes = fs.statSync(full).size;
+        const mb = Math.round(bytes / 1024 / 1024);
+        seen.set(f, { value: f, label: `${f}（${mb}MB）`, bytes, ready: true });
+      }
+    } catch (e) {}
+  }
   // 由小到大（按体积，不是文件名）——列表里一眼看出去哪个最轻
-  return out.sort((a, b) => a.bytes - b.bytes || a.value.localeCompare(b.value));
+  return [...seen.values()].sort((a, b) => a.bytes - b.bytes || a.value.localeCompare(b.value));
 }
 
 /** 某个 mlx 模型是否已就绪：支持 HF 仓库名和本地目录 */
@@ -82,7 +88,8 @@ function available(root = ROOT) {
   const mlxPy = !IS_WIN && fs.existsSync(path.join(root, ".venv", "bin", "python"));
   const mlxList = mlxModels(root);
   const mlxReady = mlxList.some((m) => m.ready);
-  const wcppBin = fs.existsSync(path.join(root, ".whisper", IS_WIN ? "whisper-server.exe" : "whisper-server"));
+  const whisperHome = process.env.WHISPER_HOME || path.join(root, ".whisper");
+  const wcppBin = fs.existsSync(path.join(whisperHome, IS_WIN ? "whisper-server.exe" : "whisper-server"));
   // 后端可用 = 运行环境 + 至少一个真正就绪的模型
   const models = wcppModels(root);
   return {

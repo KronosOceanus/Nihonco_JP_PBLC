@@ -34,6 +34,25 @@ test("列出 whisper.cpp 模型：只认 .bin，带体积标签", () => {
   assert.ok(list[0].bytes <= list[1].bytes, "列表要按体积升序");
 });
 
+test("whisper.cpp：用户模型目录优先于内置目录", () => {
+  const root = mkRoot();
+  const userDir = path.join(root, "user-models");
+  fs.mkdirSync(userDir);
+  fs.writeFileSync(path.join(userDir, "ggml-small-q5_1.bin"), Buffer.alloc(4096));
+  fs.writeFileSync(path.join(userDir, "user-only.bin"), Buffer.alloc(128));
+  const prev = process.env.NIHONCO_WHISPER_MODELS;
+  process.env.NIHONCO_WHISPER_MODELS = userDir;
+  try {
+    const list = mod.wcppModels(root);
+    const small = list.find((m) => m.value === "ggml-small-q5_1.bin");
+    assert.equal(small.bytes, 4096, "同名文件用用户目录版本");
+    assert.ok(list.some((m) => m.value === "user-only.bin"));
+  } finally {
+    if (prev === undefined) delete process.env.NIHONCO_WHISPER_MODELS;
+    else process.env.NIHONCO_WHISPER_MODELS = prev;
+  }
+});
+
 test("列出 mlx 模型：只把有 weights 的标成 ready", () => {
   const root = mkRoot();
   const list = mod.mlxModels(root);

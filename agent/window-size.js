@@ -43,7 +43,9 @@ function save({ w, h }) {
   try {
     fs.mkdirSync(dataDir(), { recursive: true });
     writeJsonAtomic(filePath(), s);
-  } catch (e) {}
+  } catch (e) {
+    if (process.env.PET_DEBUG) console.log('[window-size] 保存失败:', e.message);
+  }
   return s;
 }
 

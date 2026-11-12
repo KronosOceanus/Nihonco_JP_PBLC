@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { useTempData } from "./_env.mjs";
 
 /* 挂件窗口尺寸：夹取 + 持久化（纯逻辑，不依赖 electron） */
@@ -23,6 +25,21 @@ test("save / load：能读回，坏文件返回 null", () => {
   assert.deepEqual(ws.load(), { w: 420, h: 600 });
   fs.writeFileSync(`${dir}/window.json`, "{broken");
   assert.equal(ws.load(), null);
+});
+
+test("数据目录在 require 后变化也能生效（打包版不能再写 app.asar）", () => {
+  const old = process.env.NIHONCO_DATA_DIR;
+  const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), "nihonco-window-late-"));
+  process.env.NIHONCO_DATA_DIR = dir2;
+  try {
+    ws.save({ w: 360, h: 520 });
+    assert.ok(fs.existsSync(path.join(dir2, "window.json")));
+    assert.deepEqual(ws.load(), { w: 360, h: 520 });
+  } finally {
+    if (old === undefined) delete process.env.NIHONCO_DATA_DIR;
+    else process.env.NIHONCO_DATA_DIR = old;
+    fs.rmSync(dir2, { recursive: true, force: true });
+  }
 });
 
 test("保存时会夹取一次（手改坏的值不会让窗口变负数）", () => {

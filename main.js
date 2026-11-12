@@ -71,10 +71,16 @@ if (IS_PACKAGED && !process.env.NIHONCO_DATA_DIR) {
 // 而且静态服务器只从这一个目录读 `/.voice/*`，缓存目录必须跟它对齐。
 const VOICE_DIR = path.join(IS_PACKAGED ? USER_DATA : ROOT, '.voice');
 
-// whisper.cpp 的二进制/模型：打包后在 app.asar.unpacked 里（asar 内的可执行文件 spawn 不了）
-if (IS_PACKAGED) {
-  process.env.WHISPER_HOME = path.join(process.resourcesPath, 'app.asar.unpacked', '.whisper');
-}
+// whisper.cpp：exe/dll 只读，模型单独放可写目录；只有代码真的在 app.asar 里才切换。
+const IN_ASAR = /[\\/]app\.asar([\\/]|$)/.test(ROOT);
+const WHISPER_HOME = process.env.WHISPER_HOME
+  || (IN_ASAR ? path.join(process.resourcesPath, 'app.asar.unpacked', '.whisper')
+              : path.join(ROOT, '.whisper'));
+const WHISPER_MODELS_DIR = process.env.NIHONCO_WHISPER_MODELS
+  || (IN_ASAR ? path.join(USER_DATA, '.whisper', 'models')
+              : path.join(WHISPER_HOME, 'models'));
+process.env.WHISPER_HOME = WHISPER_HOME;
+process.env.NIHONCO_WHISPER_MODELS = WHISPER_MODELS_DIR;
 // GPU 加速后端（CUDA）放在可写目录：<userData>/asr/<cuda-12.4|cuda-11.8>/
 // 约定见 agent/asr-whispercpp.js：显式/记住的后端优先，起不来自动回落内置 CPU 版
 process.env.NIHONCO_ASR_DIR = path.join(USER_DATA, 'asr');
@@ -191,7 +197,7 @@ const ipc = createIpc({
   setPetSize: (w, h) => windowSvc.setPetSize(w, h),
   registerShortcuts: () => registerGlobalShortcuts(),
   shortcutFailures: () => shortcutFailures,
-  ROOT, VOICE_DIR, ASSET_DIR, USER_DATA,
+  ROOT, VOICE_DIR, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR,
   DATA_DIR: process.env.NIHONCO_DATA_DIR || path.join(ROOT, 'data'),
   asrGpu: require('./agent/asr-gpu'),
 });

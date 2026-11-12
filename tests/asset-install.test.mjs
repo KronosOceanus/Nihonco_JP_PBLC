@@ -44,6 +44,19 @@ test("打包 asar：Core 改写到 assetsDir，不写 app.asar", () => {
   assert.ok(!r.path.includes("app.asar"));
 });
 
+test("打包 asar：ASR 模型改写到 whisperModelsDir", () => {
+  const { root, src } = mk();
+  const asarRoot = path.join(root, "resources", "app.asar");
+  const whisperModelsDir = path.join(root, "userData", ".whisper", "models");
+  const file = path.join(src, "ggml-small-q5_1.bin");
+  fs.writeFileSync(file, "model");
+  const r = mod.install({ kind: "asr", src: file, root: asarRoot, assetsDir: path.join(root, "userData", "assets"), userData: path.join(root, "userData"), whisperModelsDir });
+  assert.equal(r.ok, true);
+  assert.equal(r.path, path.join(whisperModelsDir, "ggml-small-q5_1.bin"));
+  assert.ok(fs.existsSync(r.path));
+  assert.ok(!r.path.includes("app.asar"));
+});
+
 test("打包 asar：预览 Core 也显示 assetsDir", () => {
   const { root, src } = mk();
   const asarRoot = path.join(root, "resources", "app.asar");

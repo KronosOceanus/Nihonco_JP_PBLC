@@ -140,10 +140,12 @@ function findModel() {
     };
     return lastResolve.file;
   }
-  // 模型只在「内置目录」放一份，GPU 版共用：先找当前后端的 models/，再找内置的
-  const dirs = [path.join(whisperHome(), 'models')];
-  const base = path.join(baseHome(), 'models');
-  if (!dirs.includes(base)) dirs.push(base);
+  // 用户可写模型目录优先，其次当前后端 / 内置目录；GPU 版共用
+  const dirs = [];
+  const addDir = (d) => { if (d && !dirs.includes(path.resolve(d))) dirs.push(path.resolve(d)); };
+  addDir(process.env.NIHONCO_WHISPER_MODELS);
+  addDir(path.join(whisperHome(), 'models'));
+  addDir(path.join(baseHome(), 'models'));
   const dir = dirs[0];
   const findBin = (name) => dirs.map((d) => path.join(d, name)).find((p) => fs.existsSync(p)) || null;
   const listBins = () => {
@@ -201,7 +203,7 @@ function spawnWhisper() {
   const exe = findExe();
   const model = findModel();
   if (!exe) { lastErr = `找不到 ${EXE_NAME}（${whisperHome()}）`; log(lastErr); return; }
-  if (!model) { lastErr = `找不到模型（${path.join(whisperHome(), 'models')}）`; log(lastErr); return; }
+  if (!model) { lastErr = `找不到模型（${process.env.NIHONCO_WHISPER_MODELS || path.join(whisperHome(), 'models')}）`; log(lastErr); return; }
 
   modelPath = model;
   const threads = String(Math.max(2, Math.min(8, require('os').cpus().length - 2)));

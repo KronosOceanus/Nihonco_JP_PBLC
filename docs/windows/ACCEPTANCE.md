@@ -172,6 +172,8 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr jmdict-re
 
 - [ ] 打包版拖入模型/Core 后写到 `%APPDATA%\Nihonco\assets`，不出现 `ENOTDIR`
 - [ ] 打包版拖入 TTS zip 后写到 `%APPDATA%\Nihonco\.voicevox` / `.aivis`
+- [ ] 打包版拖入 ASR `.bin` 后写到 `%APPDATA%\Nihonco\.whisper\models`
+- [ ] 内置 `.whisper\models` 里的模型仍能作为兜底显示和选择
 - [ ] 设置 → 资源：Core / 模型 / VOICEVOX 状态正确
 - [ ] 缺少 Live2D 资产时显示明确提示，不崩
 - [ ] 放好资产后重启，模型正常渲染

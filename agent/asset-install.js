@@ -68,12 +68,15 @@ function extractZip(zip, dest) {
 function isWin(platform) { return platform === "win32"; }
 
 /** 只有代码真的在 app.asar 里时才改写到可写目录；mac 普通项目路径保持原样。 */
-function bases({ root, assetsDir, userData }) {
+function bases({ root, assetsDir, userData, whisperModelsDir }) {
   const inAsar = /[\\/]app\.asar([\\/]|$)/.test(String(root || ""));
-  if (!inAsar) return { asset: root, engine: root };
+  if (!inAsar) {
+    return { asset: root, engine: root, asr: path.join(root, ".whisper", "models") };
+  }
   return {
     asset: assetsDir || path.join(userData || root, "assets"),
     engine: userData || root,
+    asr: whisperModelsDir || path.join(userData || root, ".whisper", "models"),
   };
 }
 
@@ -137,10 +140,10 @@ function baseNameWithoutZip(file) {
   return path.basename(file).replace(/\.zip$/i, "");
 }
 
-function install({ kind, src, root, assetsDir, userData, app, platform = process.platform }) {
+function install({ kind, src, root, assetsDir, userData, whisperModelsDir, app, platform = process.platform }) {
   if (!src) throw new Error("没有文件路径");
   const actual = classify(src);
-  const dirs = bases({ root, assetsDir, userData });
+  const dirs = bases({ root, assetsDir, userData, whisperModelsDir });
   const expected = kind === "tts" ? (actual === "voicevox" || actual === "aivis" ? "tts" : actual) : actual;
   if (actual !== "unknown" && expected !== kind) throw new Error("资源类型与拖放区域不匹配");
   const st = fs.statSync(src);
@@ -218,7 +221,7 @@ function install({ kind, src, root, assetsDir, userData, app, platform = process
     dst = path.join(dirs.asset, "lib", base);
   } else if (kind === "asr") {
     if (!/\.bin$/i.test(base)) throw new Error("请拖入 ggml-*.bin 模型");
-    dst = path.join(root, ".whisper", "models", base);
+    dst = path.join(dirs.asr, base);
   } else if (kind === "aivis-voice") {
     if (!/\.aivmx$/i.test(base)) throw new Error("请拖入 .aivmx 声线");
     if (isWin(platform)) {
@@ -260,8 +263,8 @@ const LABELS = {
   tts: "TTS 引擎",
 };
 
-function pick(kind, src, { root, assetsDir, userData, app, platform = process.platform }) {
-  const dirs = bases({ root, assetsDir, userData });
+function pick(kind, src, { root, assetsDir, userData, whisperModelsDir, app, platform = process.platform }) {
+  const dirs = bases({ root, assetsDir, userData, whisperModelsDir });
   const base = path.basename(src);
   if (kind === "core") {
     if (base !== "live2dcubismcore.min.js") throw new Error("请拖入 live2dcubismcore.min.js");
@@ -269,7 +272,7 @@ function pick(kind, src, { root, assetsDir, userData, app, platform = process.pl
   }
   if (kind === "asr") {
     if (!/\.bin$/i.test(base)) throw new Error("请拖入 ggml-*.bin 模型");
-    return path.join(root, ".whisper", "models", base);
+    return path.join(dirs.asr, base);
   }
   if (kind === "aivis-voice") {
     if (!/\.aivmx$/i.test(base)) throw new Error("请拖入 .aivmx 声线");
@@ -280,8 +283,8 @@ function pick(kind, src, { root, assetsDir, userData, app, platform = process.pl
   throw new Error("暂不支持这种资源");
 }
 
-function preview({ kind, src, root, assetsDir, userData, app, platform = process.platform }) {
-  const dirs = bases({ root, assetsDir, userData });
+function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, app, platform = process.platform }) {
+  const dirs = bases({ root, assetsDir, userData, whisperModelsDir });
   if (!src) throw new Error("没有文件路径");
   const actual = classify(src);
   const actualKind = actual === "voicevox" || actual === "aivis" ? "tts" : actual;
@@ -294,7 +297,7 @@ function preview({ kind, src, root, assetsDir, userData, app, platform = process
   const base = path.basename(src);
   let target;
   if (actual === "core" || actual === "asr" || actual === "aivis-voice") {
-    target = pick(actual, src, { root, assetsDir, userData, app });
+    target = pick(actual, src, { root, assetsDir, userData, whisperModelsDir, app });
   } else if (actual === "model") {
     let name = path.basename(base, path.extname(base)).replace(/-model$/i, "");
     try {
