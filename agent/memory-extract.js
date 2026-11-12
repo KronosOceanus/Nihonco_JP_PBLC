@@ -4,7 +4,8 @@
  * 调用方传入 callJson（agent/llm.js 的 provider 封装），避免这里再造一套网络层。
  */
 
-const PROFILE_KEYS = new Set(["nickname", "level", "interests", "goals", "preferences", "boundaries"]);
+const { validLevel, kanaReading, cleanNickname } = require("./memory");
+const PROFILE_KEYS = new Set(["nickname", "nickname_reading", "level", "interests", "goals", "preferences", "boundaries"]);
 const OPS = new Set(["add", "update", "delete"]);
 
 function buildPrompt({ recent = [], snapshot = {} } = {}) {
@@ -18,9 +19,16 @@ function buildPrompt({ recent = [], snapshot = {} } = {}) {
 规则：
 - 只记用户明确说过的内容；不要从 Nihonco 自己的回复里提取。
 - 不要推测、不要补全、不要记一次性情绪或临时话题。
-- profile：称呼、等级、长期兴趣、目标、偏好、边界。
+- profile 字段严格按含义使用：
+  nickname 只写称呼本身（如「桃井冬」），不要写「名字为…」「读音为…」
+  nickname_reading 只写平假名读音（如「ももいとう」），不要括号
+  level 只能是 N5 / N4 / N3 / N2 / N1；年龄、职业、初级/高级都不是 level
+  interests / goals / preferences / boundaries 每条只写一个短事实
+  relation.address 只表示称呼方式（さん / ちゃん / 呼び捨て），不写名字
 - episode：一次具体经历，summary ≤40 字；tags 2–4 个，尽量同时给日中两语标签。
-- 不记敏感信息，不记学习进度（单词本已有），不记密码/账号/住址。
+- 不记年龄、生日、住址、账号、密码、健康、宗教、政治倾向；即使用户说出年龄也不要提取。
+- 不记学习进度（单词本已有）。
+- 不确定属于哪个字段就丢弃，不要猜、不要塞进最近的字段。
 - 最多输出 2 条 patch；没有值得记的就输出 {"patches":[]}。
 - confidence < 0.7 不要输出。
 - 输出严格 JSON，不要 Markdown，不要解释：
@@ -50,8 +58,20 @@ function normalizePatches(raw) {
     if (!OPS.has(op) || !Number.isFinite(confidence) || confidence < 0.7) continue;
     if (type === "profile") {
       const key = String(p.key || "");
-      const value = String(p.value || "").trim().slice(0, 80);
+      let value = String(p.value || "").trim().slice(0, 80);
       if (!PROFILE_KEYS.has(key) || !value) continue;
+      if (key === "level") {
+        value = validLevel(value);
+        if (!value) continue;
+      } else if (key === "nickname_reading") {
+        value = kanaReading(value);
+        if (!value) continue;
+      } else if (key === "nickname") {
+        value = cleanNickname(value);
+        if (!value) continue;
+      } else if (/年龄|年纪|歳|岁|生日|住址|地址|密码/.test(value)) {
+        continue;   // 不记年龄/住址等，禁止塞进兴趣/目标/偏好
+      }
       out.push({ op, type, key, value, confidence });
     } else if (type === "episode") {
       if (op === "add" || op === "update") {

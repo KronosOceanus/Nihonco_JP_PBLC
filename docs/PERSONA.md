@@ -1,6 +1,6 @@
 # 人格与记忆系统设计
 
-> 状态：**阶段 1 与轻量记忆已完成（v0.7.8）**（人格卡、行为 few-shot、prompt 组合器、记忆存储/召回/设置页）。
+> 状态：**阶段 1 与轻量记忆已完成（v0.7.16）**（人格卡、行为 few-shot、prompt 组合器、记忆存储/召回/设置页）。
 > 阶段 2（主动开口）、阶段 3 的整理/合并 UI、阶段 4（表情联动）未实现；  
 > 阶段 3 的存储、召回、自动提取、10 分钟空闲补提取、设置页查看/编辑/删除已做。  
 > 人格、语气、记忆、表情联动相关内容写进这个文档。  
@@ -327,6 +327,7 @@ data/persona.json
   "version": 1,
   "profile": {
     "nickname": "",
+    "nickname_reading": "",
     "level": "N4",
     "interests": [],
     "goals": [],
@@ -351,10 +352,39 @@ data/persona.json
 ### 9.2 限制
 
 ```
-profile 数组   合计最多 8 条（nickname / level 是标量，不占条目）
+profile 数组   合计最多 8 条（nickname / nickname_reading / level 是标量，不占条目）
 episodes       最多 12 条
 单条 summary   最多 40 字
 relation       0–5 熟悉度
+```
+
+### 9.2a 字段语义
+
+```text
+nickname          只写称呼本身，例如「桃井冬」
+nickname_reading  只写平假名读音，例如「ももいとう」
+level             只能是 N5 / N4 / N3 / N2 / N1
+interests / goals / preferences / boundaries
+                  每条只写一个短事实
+relation.address  只写称呼方式，例如 さん / ちゃん / 呼び捨て
+```
+
+硬性规则：
+
+```text
+不记年龄、生日、住址、账号、密码、健康、宗教、政治倾向
+即使用户说出年龄，也不提取
+level 不是年龄/职业/初级/高级
+昵称读音不能写进 nickname
+关系称呼不能写进 nickname
+非法 level、非假名读音、含年龄/住址的条目直接丢弃
+```
+
+TTS 朗读时：
+
+```text
+显示保留 nickname
+朗读把 nickname 替换成 nickname_reading
 ```
 
 ### 9.3 提取

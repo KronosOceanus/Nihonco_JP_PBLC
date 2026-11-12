@@ -18,6 +18,7 @@ const path = require("path");
 
 const config = require("./config");       // 先加载 .env，再读 GENIE_TTS_URL
 const ttsConfig = require("./tts-config");
+const DATA_DIR = process.env.NIHONCO_DATA_DIR || path.join(__dirname, "..", "data");
 const GENIE_URL = (process.env.GENIE_TTS_URL || "").replace(/\/+$/, "");
 const NAME = ttsConfig.name(engineName());       // 按名字找角色
 const SPEED = Number(process.env.VOICEVOX_SPEED || 1.0); // 默认语速（界面改过就以 settings.json 为准）
@@ -28,8 +29,21 @@ const VOLUME = Number(process.env.VOICEVOX_VOLUME || 1.0);
 const speechText = require("./speech-text");
 
 /** 朗读前规范化（详见 agent/speech-text.js）：只影响读出来的内容 */
+function userNameReading() {
+  try {
+    const p = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "persona.json"), "utf8"));
+    const pr = p.profile || {};
+    const name = String(pr.nickname || "").trim();
+    const reading = String(pr.nickname_reading || "").trim();
+    return /^[\u3040-\u309fー]+$/.test(reading) ? { name, reading } : { name: "", reading: "" };
+  } catch (e) {
+    return { name: "", reading: "" };
+  }
+}
+
 function forSpeech(text, engine = "voicevox") {
-  return speechText.prepare(text, { engine });
+  const u = userNameReading();
+  return speechText.prepare(text, { engine, userName: u.name, userReading: u.reading });
 }
 
 /** 规则版本：参与 TTS 缓存键，改规则后旧缓存自动失效 */

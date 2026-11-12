@@ -43,16 +43,38 @@ test("episode 超过 12 条时淘汰低 weight / 较旧条目", () => {
   assert.ok(ids.includes("e13"));
 });
 
+test("称呼读音独立保存；等级只接受 N5–N1；年龄不落盘", () => {
+  const { m } = temp();
+  m.patch([
+    { op: "update", type: "profile", key: "nickname", value: "桃井冬" },
+    { op: "update", type: "profile", key: "nickname_reading", value: "ももいとう" },
+    { op: "update", type: "profile", key: "level", value: "N4" },
+  ]);
+  assert.equal(m.snapshot().profile.nickname, "桃井冬");
+  assert.equal(m.snapshot().profile.nickname_reading, "ももいとう");
+  assert.equal(m.snapshot().profile.level, "N4");
+
+  m.patch([
+    { op: "update", type: "profile", key: "level", value: "27岁" },
+    { op: "update", type: "profile", key: "nickname_reading", value: "桃井冬" },
+    { op: "add", type: "profile", key: "interests", value: "27岁" },
+  ]);
+  assert.equal(m.snapshot().profile.level, "N4", "非法等级不覆盖原值");
+  assert.equal(m.snapshot().profile.nickname_reading, "ももいとう", "非假名读音不覆盖");
+  assert.ok(!m.snapshot().profile.interests.includes("27岁"));
+});
+
 test("context 注入 profile 与相关 episode，不注入无关经历", () => {
   const { m } = temp();
   m.addProfile("nickname", "阿林");
+  m.addProfile("nickname_reading", "ありん");
   m.addProfile("interests", "电影");
   m.addEpisode({ id: "e1", at: "2026-11-01", topic: "考试", summary: "说下周要考 N3", tags: ["考试", "N3"] });
   m.addEpisode({ id: "e2", at: "2026-11-02", topic: "电影", summary: "说想去看电影", tags: ["电影", "周末"] });
   m.setRelation("familiarity", 3);
 
   const ctx = m.context("周末去看电影");
-  assert.match(ctx, /叫我 阿林/);
+  assert.match(ctx, /叫我 阿林（读音 ありん）/);
   assert.match(ctx, /喜欢：电影/);
   assert.match(ctx, /说想去看电影/);
   assert.doesNotMatch(ctx, /考 N3/);

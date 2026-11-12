@@ -12,6 +12,11 @@ test("专有名词：Nihonco → にほんこ（所有引擎）", () => {
   assert.equal(prepare("Nihoncoだよ", { engine: "say" }), "にほんこだよ");
 });
 
+test("用户昵称：显示用原名，朗读用单独读音", () => {
+  assert.equal(prepare("桃井冬だよ", { userName: "桃井冬", userReading: "ももいとう" }), "ももいとうだよ");
+  assert.equal(prepare("桃井冬だよ", { userName: "桃井冬", userReading: "" }), "桃井冬だよ");
+});
+
 test("笑声：句首/标点后的「はは」→ あはは", () => {
   assert.equal(V("はは、笑ったね。"), "あはは、笑ったね。");
   assert.equal(V("そうだね。はは。"), "そうだね。あはは。");

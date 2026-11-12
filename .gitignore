@@ -58,6 +58,7 @@ data/usage.json
 
 # 长期记忆 / 人格资料（含真实个人信息，绝不入库）
 data/persona*.json
+data/*.bak-*
 data/memory*.json
 data/persona/
 data/memory/

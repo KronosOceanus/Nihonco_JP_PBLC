@@ -24,6 +24,7 @@ function blank() {
     version: 1,
     profile: {
       nickname: "",
+      nickname_reading: "",
       level: "",
       interests: [],
       goals: [],
@@ -41,6 +42,28 @@ function text(v, max = 200) {
 
 function norm(v) {
   return String(v == null ? "" : v).normalize("NFKC").replace(/[\s。、，．,.!！?？「」『』（）()・…]/g, "").toLowerCase();
+}
+
+const LEVELS = new Set(["N5", "N4", "N3", "N2", "N1"]);
+
+function validLevel(v) {
+  const lv = String(v || "").trim().toUpperCase();
+  return LEVELS.has(lv) ? lv : "";
+}
+
+function kanaReading(v) {
+  const s = String(v || "").trim();
+  return /^[\u3040-\u309fー]+$/.test(s) ? s.slice(0, 40) : "";
+}
+
+/** 只保留称呼本身；提取器偶尔写成「名字为 X，读音为 Y」，这里兜底拆开 */
+function cleanNickname(v) {
+  let s = text(v, 80);
+  if (!s) return "";
+  const m = s.match(/名字(?:为|是|叫)?[「『]([^」』]+)[」』]/);
+  if (m) return m[1].trim().slice(0, 40);
+  if (/名字|称呼|读音|歳|岁/.test(s)) return "";
+  return s.slice(0, 40);
 }
 
 function uniq(list) {
@@ -81,8 +104,9 @@ function normalizeEpisode(raw = {}) {
 function normalize(raw) {
   const d = blank();
   if (!raw || typeof raw !== "object") return d;
-  d.profile.nickname = text(raw.profile?.nickname, 40);
-  d.profile.level = text(raw.profile?.level, 8);
+  d.profile.nickname = cleanNickname(raw.profile?.nickname);
+  d.profile.nickname_reading = kanaReading(raw.profile?.nickname_reading);
+  d.profile.level = validLevel(raw.profile?.level);
   for (const k of PROFILE_ARRAYS) d.profile[k] = uniq(raw.profile?.[k]).slice(0, 20);
   d.relation.familiarity = clampFamiliarity(raw.relation?.familiarity);
   d.relation.tone = text(raw.relation?.tone, 20) || "casual";
@@ -184,7 +208,7 @@ class MemoryStore {
         const key = String(p.key || "");
         if (PROFILE_ARRAYS.includes(key)) {
           const val = text(p.value, 80);
-          if (!val) continue;
+          if (!val || /年龄|年纪|歳|岁|生日|住址|地址|密码|账号/.test(val)) continue;
           if (op === "add") {
             if (!this.data.profile[key].some((x) => norm(x) === norm(val))) this.data.profile[key].push(val);
             applied.push({ op, type, key, value: val });
@@ -199,9 +223,15 @@ class MemoryStore {
             else if (!this.data.profile[key].some((x) => norm(x) === norm(val))) this.data.profile[key].push(val);
             applied.push({ op, type, key, value: val });
           }
-        } else if (key === "nickname" || key === "level") {
+        } else if (key === "nickname" || key === "nickname_reading" || key === "level") {
           if (op === "delete") this.data.profile[key] = "";
-          else this.data.profile[key] = text(p.value, key === "level" ? 8 : 40);
+          else {
+            const next = key === "nickname" ? cleanNickname(p.value)
+              : key === "nickname_reading" ? kanaReading(p.value)
+              : validLevel(p.value);
+            if (!next) continue;   // 非法值不覆盖原值
+            this.data.profile[key] = next;
+          }
           applied.push({ op, type, key, value: this.data.profile[key] });
         }
       } else if (type === "relation") {
@@ -293,7 +323,10 @@ class MemoryStore {
     const p = this.data.profile;
     const rel = this.data.relation;
     const lines = [];
-    const who = [p.nickname ? `叫我 ${p.nickname}` : "", p.level ? `在学日语（${p.level}）` : ""].filter(Boolean);
+    const who = [
+      p.nickname ? `叫我 ${p.nickname}${p.nickname_reading ? `（读音 ${p.nickname_reading}）` : ""}` : "",
+      p.level ? `在学日语（${p.level}）` : "",
+    ].filter(Boolean);
     const facts = [];
     for (const k of PROFILE_ARRAYS) if (p[k].length) facts.push(`${k === "interests" ? "喜欢" : k === "goals" ? "目标" : k === "preferences" ? "偏好" : "边界"}：${p[k].join("、")}`);
     if (who.length || facts.length) {
@@ -327,5 +360,5 @@ function createMemory(opts) {
 module.exports = {
   MemoryStore, createMemory,
   PROFILE_ARRAYS, MAX_PROFILE_ITEMS, MAX_EPISODES, MAX_SUMMARY,
-  blank, normalize, trimProfile, trimEpisodes,
+  blank, normalize, trimProfile, trimEpisodes, validLevel, kanaReading, cleanNickname,
 };

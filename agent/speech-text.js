@@ -96,6 +96,10 @@ function prepare(text, opts = {}) {
     }
     out = out.replace(r.re, r.to);
   }
+  // 用户昵称：显示保留原名，朗读用单独读音
+  const un = String(opts.userName || "").trim();
+  const ur = String(opts.userReading || "").trim();
+  if (un && ur) out = out.split(un).join(ur);
   return stripSymbols(out);
 }
 

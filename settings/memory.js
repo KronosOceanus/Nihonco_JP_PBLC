@@ -5,7 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const ARR = ["interests", "goals", "preferences", "boundaries"];
   const LABEL = {
-    nickname: "称呼", level: "等级",
+    nickname: "称呼", nickname_reading: "称呼读音", level: "等级",
     interests: "喜欢", goals: "目标", preferences: "偏好", boundaries: "边界",
   };
 
@@ -21,7 +21,7 @@
   function countProfile(d) {
     const p = d && d.profile || {};
     return ARR.reduce((n, k) => n + (Array.isArray(p[k]) ? p[k].length : 0), 0)
-      + (p.nickname ? 1 : 0) + (p.level ? 1 : 0);
+      + (p.nickname ? 1 : 0) + (p.nickname_reading ? 1 : 0) + (p.level ? 1 : 0);
   }
 
   function paintCount(d) {
@@ -70,11 +70,11 @@
     head.textContent = "资料卡";
     wrap.appendChild(head);
 
-    for (const key of ["nickname", "level"]) {
+    for (const key of ["nickname", "nickname_reading", "level"]) {
       const inp = document.createElement("input");
       inp.type = "text";
       inp.value = data.profile[key] || "";
-      inp.placeholder = key === "level" ? "N4" : "";
+      inp.placeholder = key === "level" ? "N4" : key === "nickname_reading" ? "ももいとう" : "";
       inp.style.flex = "1";
       inp.addEventListener("change", () => patch({ op: "update", type: "profile", key, value: inp.value.trim() }));
       wrap.appendChild(row(LABEL[key], inp));

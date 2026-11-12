@@ -36,6 +36,22 @@ test("过滤低置信度、未知 profile key、空摘要", () => {
   assert.equal(patches[1].data.summary, "下周考试");
 });
 
+test("称呼读音单独提取；年龄和非法等级被丢弃", () => {
+  const patches = normalizePatches({
+    patches: [
+      { op: "update", type: "profile", key: "nickname", value: "桃井冬", confidence: 0.9 },
+      { op: "update", type: "profile", key: "nickname_reading", value: "ももいとう", confidence: 0.9 },
+      { op: "update", type: "profile", key: "level", value: "27岁", confidence: 0.9 },
+      { op: "add", type: "profile", key: "interests", value: "27岁", confidence: 0.9 },
+    ],
+  });
+  assert.equal(patches.length, 2);
+  assert.deepEqual(patches.map((p) => [p.key, p.value]), [
+    ["nickname", "桃井冬"],
+    ["nickname_reading", "ももいとう"],
+  ]);
+});
+
 test("extract 通过 callJson 应用 patch，不直接信任模型写文件", async () => {
   const { m } = temp();
   const fake = async () => ({
