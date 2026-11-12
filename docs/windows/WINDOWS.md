@@ -88,7 +88,7 @@ Windows 不跑 `asr.py`。实际实现是 `agent/asr-whispercpp.js`：主进程 
 - 模型：`ggml-small-q5_1.bin`（181 MB），`npm run setup:whisper` 下载
 - 二进制：`whisper-server.exe` + `whisper.dll` / `ggml*.dll`，从 whisper.cpp b5454 解压到 `.whisper/`
 - 热词：主进程把当天批次 + 错题本拼成 `prompt`，整词截断到 60 字；服务端作为 `initial_prompt`
-- GPU：设置 → ASR → 实际引擎切到 CUDA（可选；CUDA 运行包从 Whisper 引擎下载链接获取后拖入）；缺 `ggml-cuda.dll` 会静默回 CPU
+- GPU：设置 → ASR → 实际引擎切到 CUDA（可选；CUDA 运行包从资源区 Whisper 引擎下载链接获取后拖入）；缺 `ggml-cuda.dll` 会静默回 CPU
 
 旧方案（faster-whisper）已放弃：需要 Python 环境，和“免 Python”的移植目标冲突。
 

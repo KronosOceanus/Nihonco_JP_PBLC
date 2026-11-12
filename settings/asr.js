@@ -115,8 +115,9 @@ function renderAsrMeta(cfg) {
 let currentAsrEngine = "cpu";
 
 async function renderAsrEngine() {
-  let st = null;
+  let st = null, opt = null;
   try { st = await window.cfg.asrEngine(); } catch (e) {}
+  try { opt = await window.cfg.asrOptions(); } catch (e) {}
   const isWin = !!st && st.platform === "win32";
   for (const id of ["asrActualEngineRow", "whisperEngineRow", "whisperModelRow"]) {
     const el = $(id);
@@ -125,6 +126,16 @@ async function renderAsrEngine() {
   if (!isWin) return;
 
   const installed = new Set((st.installed || []).map((x) => x.id));
+  const mark = (id, ok) => {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = ok ? "已找到" : "未找到";
+    el.style.color = ok ? "var(--ok, #7ee2a8)" : "var(--text-dim)";
+  };
+  const rec = st.recommend || "";
+  mark("statWhisperCuda", !!rec && installed.has(rec));
+  mark("statWhisperCpu", !!(opt && opt.wcppBin));
+  mark("statWhisperModel", !!(opt && opt.wcppModels && opt.wcppModels.length));
   const sel = $("asrActualEngine");
   if (sel) {
     sel.innerHTML = "";
@@ -135,16 +146,24 @@ async function renderAsrEngine() {
       o.disabled = id !== "cpu" && !installed.has(id);
       sel.appendChild(o);
     }
-    currentAsrEngine = installed.has(st.active) ? st.active : "cpu";
+    // active.json 可能仍写着 CUDA，但 GPU 连续失败后运行时实际已回退 CPU。
+    const effective = st.gpuFallbackPermanent ? "cpu" : st.active;
+    currentAsrEngine = installed.has(effective) ? effective : "cpu";
     sel.value = currentAsrEngine;
+    const note = $("asrEngineNote");
+    if (note) {
+      note.textContent = st.gpuFallbackPermanent ? "CUDA 连续失败，已回退 CPU" : "";
+      note.style.display = st.gpuFallbackPermanent ? "" : "none";
+    }
   }
 
   const cudaBtn = $("dlWhisperCuda");
   if (cudaBtn) {
-    const rec = st.recommend || "";
     cudaBtn.disabled = !rec;
     cudaBtn.dataset.resource = rec === "cuda-11.8" ? "whisper-cuda-11.8" : "whisper-cuda-12.4";
-    cudaBtn.textContent = rec === "cuda-11.8" ? "CUDA 11.8" : (rec === "cuda-12.4" ? "CUDA 12.4" : "CUDA 版");
+    cudaBtn.textContent = rec === "cuda-11.8"
+      ? "下载 Whisper 引擎（CUDA 11.8 版）"
+      : (rec === "cuda-12.4" ? "下载 Whisper 引擎（CUDA 12.4 版）" : "下载 Whisper 引擎（CUDA 版）");
     cudaBtn.title = rec
       ? `下载 ${rec} 引擎`
       : `没有检测到可用的 NVIDIA CUDA 驱动：${(st.gpu && st.gpu.reason) || "驱动太旧或未安装"}`;

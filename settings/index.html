@@ -110,6 +110,10 @@
   button:hover { border-color: var(--border-strong); }
   button:disabled { opacity: .45; cursor: not-allowed; }
   .nowrap { white-space: nowrap; }
+  .asr-engine-row > label { flex: 0 0 96px; }
+  .asr-engine-row > .mini { flex: 0 0 68px; margin-left: 0; }
+  .asr-engine-row > select { flex: 1; min-width: 0; }
+  .asr-engine-row > button { flex: 0 0 auto; margin-left: auto; }
   .row-top { align-items: flex-start; }
   .stack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
   .inline { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
@@ -178,7 +182,16 @@
     <div class="row row-top">
       <label>ASR</label>
       <div class="stack">
-        <span id="statAsr" class="hint asset-stat">—</span>
+        <div class="engine-line" id="whisperEngineRow" style="display:none">
+          <button id="dlWhisperCuda">下载 Whisper 引擎（CUDA 版）</button>
+          <span id="statWhisperCuda" class="hint asset-stat">—</span>
+          <button id="dlWhisperCpu">下载 Whisper 引擎（CPU 版）</button>
+          <span id="statWhisperCpu" class="hint asset-stat">—</span>
+        </div>
+        <div class="engine-line" id="whisperModelRow" style="display:none">
+          <button id="dlWhisperModel">下载 Whisper 模型</button>
+          <span id="statWhisperModel" class="hint asset-stat">—</span>
+        </div>
         <span id="asrHint" class="hint">—</span>
       </div>
     </div>
@@ -262,26 +275,20 @@
 
 <section>
     <h2 class="section-title">ASR</h2>
-    <div class="row"><label>语音识别</label>
+    <div class="row asr-engine-row"><label>语音识别</label>
       <span class="mini">引擎</span>
-      <select id="asrBackend" data-tip="mlx：Apple GPU，需 Python；whisper.cpp：Metal，免 Python"></select>
+      <select id="asrBackend" data-tip="whisper.cpp：本地识别；mlx：Apple GPU"></select>
       <button id="applyAsr" class="nowrap" data-tip="应用后才切换识别服务">应用</button>
     </div>
-    <div class="row"><label></label>
-      <span class="mini">模型</span>
-      <select id="asrModel"></select>
-    </div>
-    <div class="row" id="asrActualEngineRow" style="display:none"><label>实际引擎</label>
+    <div class="row asr-engine-row" id="asrActualEngineRow" style="display:none"><label></label>
+      <span class="mini">实际引擎</span>
       <select id="asrActualEngine"></select>
       <button id="applyAsrEngine" class="pill" data-tip="切换 CPU / CUDA 后重启识别服务">应用</button>
     </div>
-
-    <div class="row" id="whisperEngineRow" style="display:none"><label>Whisper 引擎</label>
-      <button id="dlWhisperCuda">CUDA 版</button>
-      <button id="dlWhisperCpu">CPU 版</button>
-    </div>
-    <div class="row" id="whisperModelRow" style="display:none"><label>Whisper 模型</label>
-      <button id="dlWhisperModel">下载模型</button>
+    <div class="hint" id="asrEngineNote" style="display:none; margin-left:0"></div>
+    <div class="row asr-engine-row"><label></label>
+      <span class="mini">模型</span>
+      <select id="asrModel"></select>
     </div>
 
     <p class="hint"><span id="asrInfo">—</span><br>

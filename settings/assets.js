@@ -10,7 +10,7 @@
       const set = (id, ok, rel, full) => {
         const el = $(id);
         if (!el) return;
-        const prefix = id === "statVoice" ? "VOICEVOX" : (id === "statAivis" ? "AivisSpeech" : (id === "statAsr" ? "ASR" : ""));
+        const prefix = id === "statVoice" ? "VOICEVOX" : (id === "statAivis" ? "AivisSpeech" : "");
         if (prefix) {
           el.textContent = `${prefix} ${ok ? "已找到" : "未找到"}`;
         } else {
@@ -19,7 +19,7 @@
             : (ok ? "已找到" : "未找到");
         }
         el.style.color = ok ? "var(--ok, #7ee2a8)" : "var(--text-dim)";
-        el.dataset.open = ok ? ({ statModel: "model", statCore: "core", statVoice: "voicevox", statAivis: "aivis", statAsr: "whisper" }[id] || "") : "";
+        el.dataset.open = ok ? ({ statModel: "model", statCore: "core", statVoice: "voicevox", statAivis: "aivis" }[id] || "") : "";
         el.classList.toggle("asset-link", !!ok);
         el.tabIndex = ok ? 0 : -1;
         el.setAttribute("role", ok ? "button" : "text");
@@ -31,11 +31,10 @@
       set("statCore", !!(r && r.core), "lib/live2dcubismcore.min.js", r && r.paths && r.paths.core);
       set("statVoice", !!(r && r.voicevox), "", r && r.paths && r.paths.voicevox);
       set("statAivis", !!(r && r.aivis), "", r && r.paths && r.paths.aivis);
-      set("statAsr", !!(r && r.asr), "", r && r.paths && r.paths.asr);
       paintAssetPath(r);
       paintEnginePath(r);
     } catch (e) {
-      for (const id of ["statModel", "statCore", "statVoice", "statAivis", "statAsr"]) {
+      for (const id of ["statModel", "statCore", "statVoice", "statAivis"]) {
         const el = $(id);
         if (el) el.textContent = "—";
       }
@@ -169,7 +168,7 @@
     if (openAssets) openAssets.addEventListener("click", () => window.cfg.openPath("assets").catch(() => {}));
 
     // 绿色「已找到」状态本身也是入口：点路径 = 打开所在目录
-    for (const id of ["statModel", "statCore", "statVoice", "statAivis", "statAsr"]) {
+    for (const id of ["statModel", "statCore", "statVoice", "statAivis"]) {
       const el = $(id);
       if (!el) continue;
       const open = () => {

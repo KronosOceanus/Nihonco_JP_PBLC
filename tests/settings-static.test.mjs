@@ -13,7 +13,7 @@ test("设置分区顺序固定", () => {
 });
 
 test("资源区三行与状态 id 都在", () => {
-  for (const id of ["dlCore", "dlModel", "dlVoice", "dlAivis", "statCore", "statModel", "statAsr", "statVoice", "statAivis", "openAssets", "dirAssets"]) {
+  for (const id of ["dlCore", "dlModel", "dlVoice", "dlAivis", "statCore", "statModel", "statVoice", "statAivis", "statWhisperCuda", "statWhisperCpu", "statWhisperModel", "dlWhisperCuda", "dlWhisperCpu", "dlWhisperModel", "asrActualEngine", "applyAsrEngine", "openAssets", "dirAssets"]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
   for (const id of ["ttsEngine", "applyEngine", "pickVoicevox", "pickAivis", "voicevoxPath", "aivisPath", "voicePick", "preview", "openData", "dirData"]) {
