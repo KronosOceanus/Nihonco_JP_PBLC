@@ -76,6 +76,25 @@ test("打包 asar：预览 Core 也显示 assetsDir", () => {
   assert.ok(!r.target.includes("app.asar"));
 });
 
+test("CPU 包：识别并安装到 asr/cpu", () => {
+  const { root, src } = mk();
+  const zip = new AdmZip();
+  for (const f of ["whisper-server.exe", "whisper.dll", "ggml.dll", "ggml-base.dll", "ggml-cpu-avx2.dll"]) {
+    zip.addFile("Release/" + f, Buffer.from("x"));
+  }
+  const file = path.join(src, "whisper-bin-x64.zip");
+  zip.writeZip(file);
+  assert.deepEqual(mod.cpuInfo(file), { kind: "whisper-cpu" });
+  assert.equal(mod.classify(file, { IS_WIN: true }), "whisper-cpu");
+  const asrDir = path.join(root, "asr");
+  const p = mod.preview({ src: file, root, asrDir, platform: { IS_WIN: true } });
+  assert.equal(p.kind, "whisper-cpu");
+  assert.equal(p.target, path.join(asrDir, "cpu"));
+  const r = mod.installWhisperCpu({ src: file, asrDir });
+  assert.equal(r.ok, true);
+  assert.ok(fs.existsSync(path.join(r.path, "whisper-server.exe")));
+});
+
 test("CUDA 包：按内容识别版本，只在 Windows 识别", () => {
   const { root, src } = mk();
   const zip = new AdmZip();
@@ -87,6 +106,7 @@ test("CUDA 包：按内容识别版本，只在 Windows 识别", () => {
   zip.writeZip(file);
   assert.deepEqual(mod.cudaInfo(file), { id: "cuda-12.4" });
   assert.equal(mod.classify(file, "win32"), "cuda");
+  assert.equal(mod.classify(file, { IS_WIN: true }), "cuda");
   assert.equal(mod.classify(file, "darwin"), "unknown");
   const p = mod.preview({ src: file, root, asrDir: path.join(root, "asr"), platform: "win32" });
   assert.equal(p.ok, true);

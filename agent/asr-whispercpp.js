@@ -71,6 +71,12 @@ function detectBackends() {
       try { if (fs.existsSync(exe)) list.push({ id, home, exe }); } catch (e) {}
     }
   }
+  // 用户拖入的 CPU 运行时优先；内置 CPU 作为兜底
+  if (ASR_DIR) {
+    const userHome = path.join(ASR_DIR, 'cpu');
+    const userExe = path.join(userHome, EXE_NAME);
+    try { if (fs.existsSync(userExe)) list.push({ id: 'cpu', home: userHome, exe: userExe }); } catch (e) {}
+  }
   list.push({ id: 'cpu', home: base, exe: path.join(base, EXE_NAME) });
   return list;
 }

@@ -1,5 +1,14 @@
 # 更新日志
 
+## v0.7.31 — 平台判断与 CPU 引擎拖入
+
+### 设置
+
+- 修复 platform 模块对象被当成 win32 字符串判断，CUDA 包不再被误判为无法识别
+- 修复 Windows 资源预览的 VOICEVOX / Aivis 目标路径
+- CPU 引擎“已找到”改为检查用户 CPU 目录或内置运行时
+- 支持拖入 Windows Whisper CPU zip，安装到 userData/asr/cpu 并优先使用
+
 ## v0.7.30 — mac Whisper 模型下载与文档同步
 
 ### 设置

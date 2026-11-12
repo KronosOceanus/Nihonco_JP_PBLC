@@ -18,6 +18,7 @@ Live2D Core       live2dcubismcore.min.js
 Live2D 模型       *.model3.json 的 zip
 ASR 模型          ggml-*.bin
 Whisper CUDA 引擎  whisper-server.exe + ggml-cuda.dll 的 zip（Windows）
+Whisper CPU 引擎   whisper-server.exe + ggml*.dll 的 zip（Windows）
 Aivis 声线        *.aivmx
 VOICEVOX 引擎     vv-engine/run(.exe) 的 zip
 AivisSpeech 引擎  AivisSpeech-Engine/run(.exe) 的 zip
@@ -40,7 +41,9 @@ AivisSpeech 引擎  AivisSpeech-Engine/run(.exe) 的 zip
 - 目前只支持单文件和 zip，不支持直接拖目录。
 - 安装前会备份，自检失败会尝试回滚。
 - ASR 显示「正在加载」表示已安装但服务尚未 ready。
-- Whisper CUDA zip 按包内的 `ggml-cuda.dll` 与 `cudart64_*.dll` 识别 12.4 / 11.8，安装前停 ASR，安装后重启。
+- Whisper CUDA zip 按包内的 `ggml-cuda.dll` 与 `cudart64_*.dll` 识别 12.4 / 11.8，安装到 `%APPDATA%\Nihonco\asr\cuda-*`。
+- Whisper CPU zip 按 `whisper-server.exe` + `ggml*.dll` 且没有 `ggml-cuda.dll` 识别，安装到 `%APPDATA%\Nihonco\asr\cpu`，优先于内置 CPU 运行时。
+- 两种引擎包安装前都停 ASR，安装后重启。
 - Aivis 启动时会从 AivisHub 自动恢复默认声线，删掉默认声线后仍可能回来。
 - AivisSpeech 首次启动会自动下载 BERT 模型（约 1GB+）；设置窗口显示阶段、缓存大小，可取消并回滚 VOICEVOX。BERT 暂不支持拖放安装。
 

@@ -65,7 +65,14 @@ function extractZip(zip, dest) {
   }
 }
 
-function isWin(platform) { return platform === "win32"; }
+/** platform 可能是 "win32" 字符串，也可能是 agent/platform 模块对象 */
+function platformName(platform) {
+  if (typeof platform === "string") return platform;
+  if (platform && platform.IS_WIN) return "win32";
+  if (platform && platform.IS_MAC) return "darwin";
+  return process.platform;
+}
+function isWin(platform) { return platformName(platform) === "win32"; }
 
 /** 当前可写资产根：开发/full = root，打包 asar = assetsDir */
 function assetBase({ root, assetsDir }) {
@@ -148,8 +155,8 @@ function baseNameWithoutZip(file) {
 
 function install({ kind, src, root, assetsDir, userData, whisperModelsDir, app, platform = process.platform }) {
   if (!src) throw new Error("没有文件路径");
-  if (kind === "cuda") throw new Error("CUDA 包请通过识别加速安装流程");
-  const actual = classify(src);
+  if (kind === "cuda" || kind === "whisper-cpu") throw new Error("Whisper 引擎包请通过引擎安装流程");
+  const actual = classify(src, platform);
   const dirs = bases({ root, assetsDir, userData, whisperModelsDir });
   const expected = kind === "tts" ? (actual === "voicevox" || actual === "aivis" ? "tts" : actual) : actual;
   if (actual !== "unknown" && expected !== kind) throw new Error("资源类型与拖放区域不匹配");
@@ -261,6 +268,52 @@ function cudaInfo(src) {
   return { id: v12 ? "cuda-12.4" : "cuda-11.8" };
 }
 
+/** Windows CPU whisper 包：有 whisper-server.exe 和 ggml.dll，但没有 ggml-cuda.dll */
+function cpuInfo(src) {
+  let names = [];
+  try { names = entries(src).map((e) => String(e.entryName).replace(/\\/g, "/")); } catch (e) { return null; }
+  const hasServer = names.some((n) => /(^|\/)whisper-server\.exe$/i.test(n));
+  const hasGgml = names.some((n) => /(^|\/)ggml(?:\.dll|-base\.dll|-cpu-[^/]+\.dll)$/i.test(n));
+  const hasCuda = names.some((n) => /(^|\/)ggml-cuda\.dll$/i.test(n));
+  return hasServer && hasGgml && !hasCuda ? { kind: "whisper-cpu" } : null;
+}
+
+/** 安装 Windows CPU whisper 包到 asrDir/cpu；调用方负责停 ASR */
+function installWhisperCpu({ src, asrDir }) {
+  if (!src) throw new Error("没有文件路径");
+  assertZipSafe(src);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "nihonco-cpu-"));
+  const target = path.join(asrDir, "cpu");
+  const staging = path.join(asrDir, ".cpu-staging-" + process.pid);
+  let backup = null;
+  try {
+    extractZip(src, tmp);
+    const server = findOne(tmp, (p) => /(^|[\\/])whisper-server\.exe$/i.test(p));
+    if (!server) throw new Error("CPU 包缺少 whisper-server.exe");
+    const srcDir = path.dirname(server);
+    const files = fs.readdirSync(srcDir, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
+    const required = ["whisper-server.exe", "whisper.dll", "ggml.dll", "ggml-base.dll"];
+    const missing = required.filter((f) => !files.includes(f));
+    if (missing.length) throw new Error("CPU 包缺少文件：" + missing.join(", "));
+    if (!files.some((f) => /^ggml-cpu-.*\.dll$/i.test(f))) throw new Error("CPU 包缺少 ggml-cpu-*.dll");
+    fs.mkdirSync(asrDir, { recursive: true });
+    fs.rmSync(staging, { recursive: true, force: true });
+    fs.mkdirSync(staging, { recursive: true });
+    for (const f of files) fs.copyFileSync(path.join(srcDir, f), path.join(staging, f));
+    backup = stashDir(target);
+    fs.renameSync(staging, target);
+    return { ok: true, kind: "whisper-cpu", path: target, backup, files };
+  } catch (e) {
+    fs.rmSync(staging, { recursive: true, force: true });
+    if (backup && fs.existsSync(backup) && !fs.existsSync(target)) {
+      try { fs.renameSync(backup, target); } catch (e2) {}
+    }
+    throw e;
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 function classify(src, platform = process.platform) {
   const base = path.basename(src).toLowerCase();
   if (base === "live2dcubismcore.min.js") return "core";
@@ -270,6 +323,7 @@ function classify(src, platform = process.platform) {
   let names = [];
   try { names = entries(src).map((e) => String(e.entryName).replace(/\\/g, "/")); } catch (e) { return "unknown"; }
   if (isWin(platform) && cudaInfo(src)) return "cuda";
+  if (isWin(platform) && cpuInfo(src)) return "whisper-cpu";
   if (names.some((n) => /\.model3\.json$/i.test(n))) return "model";
   if (names.some((n) => /AivisSpeech-Engine\/run(\.exe)?$/.test(n))) return "aivis";
   if (names.some((n) => /\/vv-engine\/run(\.exe)?$/.test(n))) return "voicevox";
@@ -324,6 +378,12 @@ function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, asrDi
     const target = path.join(asrDir || path.join(userData || root, "asr"), info.id);
     return { ok: true, kind: "cuda", cudaId: info.id, label: `识别加速（${info.id.replace("cuda-", "CUDA ")}）`, target, exists: fs.existsSync(target) };
   }
+  if (actual === "whisper-cpu") {
+    assertZipSafe(src);
+    if (!cpuInfo(src)) throw new Error("CPU 包内容不完整");
+    const target = path.join(asrDir || path.join(userData || root, "asr"), "cpu");
+    return { ok: true, kind: "whisper-cpu", label: "Whisper 引擎（CPU）", target, exists: fs.existsSync(target) };
+  }
   if (actual === "core" || actual === "asr" || actual === "aivis-voice") {
     target = pick(actual, src, { root, assetsDir, userData, whisperModelsDir, app });
   } else if (actual === "model") {
@@ -343,4 +403,4 @@ function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, asrDi
   return { ok: true, kind, label: LABELS[kind] || kind, target, exists: fs.existsSync(target) };
 }
 
-module.exports = { install, preview, rollback, assetBase, classify, cudaInfo, assertZipSafe };
+module.exports = { install, installWhisperCpu, preview, rollback, assetBase, classify, cudaInfo, cpuInfo, assertZipSafe, platformName };

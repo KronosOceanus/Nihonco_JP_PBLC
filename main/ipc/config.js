@@ -211,6 +211,20 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   });
 
   settingsHandle('cfg:install-asset', async (e, { kind, src } = {}) => {
+    if (kind === 'whisper-cpu') {
+      const asrDir = asrDirOf();
+      if (!assetInstall.cpuInfo(src)) throw new Error('CPU 包内容不完整');
+      stopAsr();
+      try {
+        await new Promise((r) => setTimeout(r, 600));
+        const r = assetInstall.installWhisperCpu({ src, asrDir });
+        await restartAsr();
+        return r;
+      } catch (e) {
+        try { await restartAsr(); } catch (e2) {}
+        throw e;
+      }
+    }
     if (kind === 'cuda') {
       const info = assetInstall.cudaInfo(src);
       if (!info) throw new Error('CUDA 包内容不完整');
@@ -235,7 +249,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     if (kind === 'tts') voiceSvc.stopEngine();
     let r;
     try {
-      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app });
+      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app, platform });
     } finally {
       if (wasRunning) voiceSvc.startTtsEngine();
     }

@@ -89,7 +89,9 @@ function available(root = ROOT) {
   const mlxList = mlxModels(root);
   const mlxReady = mlxList.some((m) => m.ready);
   const whisperHome = process.env.WHISPER_HOME || path.join(root, ".whisper");
-  const wcppBin = fs.existsSync(path.join(whisperHome, IS_WIN ? "whisper-server.exe" : "whisper-server"));
+  const exeName = IS_WIN ? "whisper-server.exe" : "whisper-server";
+  const userCpu = process.env.NIHONCO_ASR_DIR ? path.join(process.env.NIHONCO_ASR_DIR, "cpu") : "";
+  const wcppBin = [userCpu, whisperHome].filter(Boolean).some((d) => fs.existsSync(path.join(d, exeName)));
   // 后端可用 = 运行环境 + 至少一个真正就绪的模型
   const models = wcppModels(root);
   return {
