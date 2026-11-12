@@ -17,6 +17,12 @@ test("预热后能转读音；未预热时 toKana 返回 null", async () => {
   assert.equal(reading.ready(), true);
 });
 
+test("JMdict 基础表：四人按整词读音，不按字拆分", () => {
+  assert.deepEqual(reading.tokens("四人")[0], { t: "四人", r: "よにん", p: "名詞", b: "四人" });
+  assert.equal(reading.toKana("四人"), "よにん");
+  assert.equal(reading.toKana("四人家族です。"), "よにんかぞくです。");
+});
+
 test("关键读音：出来る / 可愛い / 来る / てきる", () => {
   assert.equal(reading.toKana("出来る"), "できる");
   assert.equal(reading.toKana("可愛い"), "かわいい");
@@ -54,6 +60,18 @@ test("振假名：只有含汉字的片段带读音", async () => {
   assert.deepEqual(segs[1], { t: "は" });
   assert.deepEqual(segs[3], { t: "な" });   // 假名不带 ruby
   assert.ok(segs.some((s) => s.t === "町" && s.r === "まち"));
+  const four = fg.of("四人家族です。");
+  assert.deepEqual(four[0], { t: "四人", r: "よにん" });
+});
+
+test("JMdict 紧凑表存在，单 token 不破坏原形", () => {
+  const map = JSON.parse(fs.readFileSync("data/jmdict-readings.json", "utf8"));
+  assert.equal(Object.keys(map).filter((k) => !k.startsWith("_")).length, 17706);
+  assert.equal(map["四人"], "よにん");
+  const t = reading.tokens("終わり")[0];
+  assert.equal(t.t, "終わり");
+  assert.equal(t.b, "終わる");
+  assert.equal(t.r, "おわり");
 });
 
 test("复现判分：读音一致就算对（汉字/假名、标点不影响）", async () => {

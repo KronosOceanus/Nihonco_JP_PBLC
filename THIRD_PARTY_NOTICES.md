@@ -46,4 +46,8 @@ This content uses sample data owned and copyrighted by Live2D Inc.
 ## 数据
 
 `data/` 下的词表/句型数据来源与许可证见 [data/README.md](data/README.md)。
+
+`data/jmdict-readings.json` 的读音来自 JMdict（EDRDG，CC BY-SA 4.0），
+由 `tools/build-jmdict-readings.mjs` 从 jmdict-simplified 的 commonOnly 数据生成。
+见 [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project)。
 若某个数据文件不允许再分发，公开仓库中应移除，改为脚本生成或用户自备。

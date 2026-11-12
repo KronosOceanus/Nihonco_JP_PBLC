@@ -18,6 +18,26 @@ const { toHiragana } = require("./romaji");
 
 let tokenizer = null;
 let building = null;
+let jmdict = null;
+let merged = null;
+
+function loadMap(file) {
+  try {
+    const j = require(path.join(__dirname, "..", "data", file));
+    const out = {};
+    for (const [k, v] of Object.entries(j)) {
+      if (!k.startsWith("_") && k && typeof v === "string") out[k] = v;
+    }
+    return out;
+  } catch (e) { return {}; }
+}
+
+function loadReadings() {
+  if (merged) return merged;
+  if (!jmdict) jmdict = loadMap("jmdict-readings.json");
+  merged = jmdict;
+  return merged;
+}
 
 function dicPath() {
   return path.join(path.dirname(require.resolve("kuromoji/package.json")), "dict");
@@ -46,24 +66,48 @@ function toKana(text) {
   const s = String(text || "");
   if (!s) return "";
   let out = "";
-  for (const t of tokenizer.tokenize(s)) {
+  for (const t of mergedTokens(s)) {
     const surf = t.surface_form || "";
     if (t.reading && t.reading !== "*") { out += toHiragana(t.reading); continue; }
-    // 没有读音的（假名/数字/英文/符号）：假名和字母数字保留，符号跳过
     if (/^[\u3040-\u30ffA-Za-z0-9ー]+$/.test(surf)) { out += toHiragana(surf); continue; }
-    if (/[\u4e00-\u9fff]/.test(surf)) return "";     // 有汉字却拿不到读音 → 放弃判断
+    if (/[\u4e00-\u9fff]/.test(surf)) return "";
   }
   return out;
 }
 
-/** 分词结果：[{ t: surface, r: 平假名读音|null }]；未就绪返回 null */
+/** 在 kuromoji 结果上合并「四人」这类整体读音词 */
+function mergedTokens(text) {
+  const raw = tokenizer.tokenize(String(text || ""));
+  const map = loadReadings();
+  const out = [];
+  for (let i = 0; i < raw.length;) {
+    let best = null;
+    let surface = "";
+    for (let n = 1; n <= 3 && i + n <= raw.length; n++) {
+      surface += raw[i + n - 1].surface_form || "";
+      if (map[surface]) best = { n, reading: map[surface], surface };
+    }
+    // 单 token 已由 kuromoji 给出原形/读音，不能覆盖 basic_form；
+    // 只有跨 token 的复合词才用读音表合并。
+    if (best && best.n > 1) {
+      out.push({ surface_form: best.surface, reading: best.reading, pos: "名詞", basic_form: best.surface });
+      i += best.n;
+    } else {
+      out.push(raw[i]);
+      i += 1;
+    }
+  }
+  return out;
+}
+
+/** 分词结果：[{ t, r, p, b }]；未就绪返回 null */
 function tokens(text) {
   if (!tokenizer) return null;
-  return tokenizer.tokenize(String(text || "")).map((t) => ({
+  return mergedTokens(text).map((t) => ({
     t: t.surface_form || "",
     r: t.reading && t.reading !== "*" ? toHiragana(t.reading) : null,
-    p: t.pos || "",                 // 词性（名詞 / 動詞 / 助動詞…），规则判断用
-    b: t.basic_form && t.basic_form !== "*" ? t.basic_form : (t.surface_form || ""),   // 原形
+    p: t.pos || "",
+    b: t.basic_form && t.basic_form !== "*" ? t.basic_form : (t.surface_form || ""),
   }));
 }
 

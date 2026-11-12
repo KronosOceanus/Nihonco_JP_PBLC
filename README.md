@@ -3,7 +3,7 @@
 一只浮在桌面上的 Live2D 角色：能听你说日语、跟你对话、讲解语法、抽查单词。
 **macOS 与 Windows 都能跑**；语音识别在本机，只有对话文本发给大模型。
 
-当前版本 **v0.7.17**（忽略 data 安全写备份）· 变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.7.19**（JMdict 基础读音表）· 变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ![界面预览](preview.png)
 
