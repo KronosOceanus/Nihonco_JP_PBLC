@@ -90,7 +90,7 @@ https://aivis-project.com/speech/
 
 ## 4. 构建前检查
 
-lite 不需要模型/Core：
+lite 是默认版本，不需要模型/Core：
 
 ```powershell
 npm run check:assets:lite
@@ -170,6 +170,8 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr jmdict-re
 
 ### 资源与 Live2D
 
+- [ ] 打包版拖入模型/Core 后写到 `%APPDATA%\Nihonco\assets`，不出现 `ENOTDIR`
+- [ ] 打包版拖入 TTS zip 后写到 `%APPDATA%\Nihonco\.voicevox` / `.aivis`
 - [ ] 设置 → 资源：Core / 模型 / VOICEVOX 状态正确
 - [ ] 缺少 Live2D 资产时显示明确提示，不崩
 - [ ] 放好资产后重启，模型正常渲染

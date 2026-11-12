@@ -1,6 +1,6 @@
 /* 设置项通道：配置 / API key / provider / 模型 / 开机自启 / 资源链接 */
 module.exports = function registerConfigIpc({ settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
-  app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, DATA_DIR,
+  app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, ASSET_DIR, USER_DATA, DATA_DIR,
 }) {
   const fs = require('fs');
   const path = require('path');
@@ -201,7 +201,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   });
 
   settingsHandle('cfg:preview-asset', (e, { kind, src } = {}) => {
-    return assetInstall.preview({ kind, src, root: ROOT, app });
+    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, app });
   });
 
   settingsHandle('cfg:install-asset', async (e, { kind, src } = {}) => {
@@ -209,7 +209,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     if (kind === 'tts') voiceSvc.stopEngine();
     let r;
     try {
-      r = assetInstall.install({ kind, src, root: ROOT, app });
+      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, app });
     } finally {
       if (wasRunning) voiceSvc.startTtsEngine();
     }

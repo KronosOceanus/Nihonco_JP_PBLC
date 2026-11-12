@@ -1,7 +1,7 @@
 /* 设置窗口 IPC 装配：config / 快捷键 / TTS+ASR / 数据 / 窗口大小 / 关闭 */
 module.exports = function registerSettingsIpc({
   settingsHandle, settingsOn, getWin, getSettingsWin, app, dialog, backup, config,
-  ROOT, DATA_DIR, getPetSize, setPetSize,
+  ROOT, ASSET_DIR, USER_DATA, DATA_DIR, getPetSize, setPetSize,
   refreshVoiceCache, loadPet, isPackaged, shell, voiceSvc, tts,
   registerShortcuts, shortcutFailures, ensureTtsEngine, speakToWav,
   asrBackends, restartAsr, stopAsr, asrGpu, asrLog, asrSvc, agent, platform,
@@ -9,7 +9,7 @@ module.exports = function registerSettingsIpc({
 
   require('./config')({
     settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
-    app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, DATA_DIR,
+    app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, ASSET_DIR, USER_DATA, DATA_DIR,
   });
 
   settingsHandle('cfg:pet-size', () => {

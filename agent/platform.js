@@ -138,6 +138,8 @@ function voicevoxEngineCandidates({ root, userData, env = process.env }) {
   return [
     path.join(root, ".voicevox", "extracted", "VOICEVOX", "VOICEVOX.app",
       "Contents", "Resources", "vv-engine", "run"),
+    path.join(userData || "", ".voicevox", "extracted", "VOICEVOX", "VOICEVOX.app",
+      "Contents", "Resources", "vv-engine", "run"),
     path.join(env.HOME || "", "Applications", "VOICEVOX.app",
       "Contents", "Resources", "vv-engine", "run"),
     "/Applications/VOICEVOX.app/Contents/Resources/vv-engine/run",
@@ -145,12 +147,13 @@ function voicevoxEngineCandidates({ root, userData, env = process.env }) {
 }
 
 /** AivisSpeech 引擎候选路径（标准和开发版安装位置） */
-function aivisEngineCandidates({ root, env = process.env } = {}) {
+function aivisEngineCandidates({ root, userData, env = process.env } = {}) {
   if (env.AIVIS_ENGINE) return [env.AIVIS_ENGINE];
   const path = require("path");
   if (IS_WIN) {
     return [
       path.join(root, ".aivis", "AivisSpeech-Engine", "run.exe"),
+      path.join(userData || "", ".aivis", "AivisSpeech-Engine", "run.exe"),
       path.join(env.ProgramFiles || "C:\\Program Files", "AivisSpeech", "AivisSpeech-Engine", "run.exe"),
       path.join(env.LOCALAPPDATA || "", "Programs", "AivisSpeech", "AivisSpeech-Engine", "run.exe"),
     ];

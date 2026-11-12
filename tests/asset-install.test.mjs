@@ -31,6 +31,30 @@ test("资源安装：ASR .bin 复制到 .whisper/models/", () => {
   assert.equal(fs.readFileSync(path.join(root, ".whisper/models/ggml-small-q5_1.bin"), "utf8"), "model");
 });
 
+test("打包 asar：Core 改写到 assetsDir，不写 app.asar", () => {
+  const { root, src } = mk();
+  const asarRoot = path.join(root, "resources", "app.asar");
+  const assetsDir = path.join(root, "userData", "assets");
+  const file = path.join(src, "live2dcubismcore.min.js");
+  fs.writeFileSync(file, "core");
+  const r = mod.install({ kind: "core", src: file, root: asarRoot, assetsDir, userData: path.join(root, "userData") });
+  assert.equal(r.ok, true);
+  assert.equal(r.path, path.join(assetsDir, "lib", "live2dcubismcore.min.js"));
+  assert.ok(fs.existsSync(r.path));
+  assert.ok(!r.path.includes("app.asar"));
+});
+
+test("打包 asar：预览 Core 也显示 assetsDir", () => {
+  const { root, src } = mk();
+  const asarRoot = path.join(root, "resources", "app.asar");
+  const assetsDir = path.join(root, "userData", "assets");
+  const file = path.join(src, "live2dcubismcore.min.js");
+  fs.writeFileSync(file, "core");
+  const r = mod.preview({ kind: "core", src: file, root: asarRoot, assetsDir, userData: path.join(root, "userData") });
+  assert.equal(r.target, path.join(assetsDir, "lib", "live2dcubismcore.min.js"));
+  assert.ok(!r.target.includes("app.asar"));
+});
+
 test("资源安装：拒绝错误文件类型", () => {
   const { root, src } = mk();
   const file = path.join(src, "wrong.txt");

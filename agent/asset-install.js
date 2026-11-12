@@ -67,6 +67,16 @@ function extractZip(zip, dest) {
 
 function isWin(platform) { return platform === "win32"; }
 
+/** 只有代码真的在 app.asar 里时才改写到可写目录；mac 普通项目路径保持原样。 */
+function bases({ root, assetsDir, userData }) {
+  const inAsar = /[\\/]app\.asar([\\/]|$)/.test(String(root || ""));
+  if (!inAsar) return { asset: root, engine: root };
+  return {
+    asset: assetsDir || path.join(userData || root, "assets"),
+    engine: userData || root,
+  };
+}
+
 function stashDir(target) {
   if (!fs.existsSync(target)) return null;
   cleanupBackups(target);
@@ -127,9 +137,10 @@ function baseNameWithoutZip(file) {
   return path.basename(file).replace(/\.zip$/i, "");
 }
 
-function install({ kind, src, root, app, platform = process.platform }) {
+function install({ kind, src, root, assetsDir, userData, app, platform = process.platform }) {
   if (!src) throw new Error("没有文件路径");
   const actual = classify(src);
+  const dirs = bases({ root, assetsDir, userData });
   const expected = kind === "tts" ? (actual === "voicevox" || actual === "aivis" ? "tts" : actual) : actual;
   if (actual !== "unknown" && expected !== kind) throw new Error("资源类型与拖放区域不匹配");
   const st = fs.statSync(src);
@@ -144,7 +155,7 @@ function install({ kind, src, root, app, platform = process.platform }) {
         if (!modelJson) throw new Error("zip 里没有 .model3.json");
         const srcDir = path.dirname(modelJson);
         const name = path.basename(srcDir) || baseNameWithoutZip(src);
-        const dst = path.join(root, "model", name);
+        const dst = path.join(dirs.asset, "model", name);
         fs.mkdirSync(path.dirname(dst), { recursive: true });
         const backup = stashDir(dst);
         fs.renameSync(srcDir, dst);
@@ -154,7 +165,7 @@ function install({ kind, src, root, app, platform = process.platform }) {
       const ai = findOne(tmp, (p) => /\/AivisSpeech-Engine\/run(\.exe)?$/.test(p.replace(/\\/g, "/")));
       if (vv) {
         if (isWin(platform)) {
-          const home = path.join(root, ".voicevox", "windows");
+          const home = path.join(dirs.engine, ".voicevox", "windows");
           fs.mkdirSync(home, { recursive: true });
           const dst = path.join(home, "VOICEVOX");
           const backup = stashDir(dst);
@@ -164,7 +175,7 @@ function install({ kind, src, root, app, platform = process.platform }) {
           fs.renameSync(vvDir, path.join(dst, "vv-engine"));
           return { ok: true, kind: "voicevox", path: dst, backup };
         }
-        const home = path.join(root, ".voicevox", "extracted");
+        const home = path.join(dirs.engine, ".voicevox", "extracted");
         fs.mkdirSync(home, { recursive: true });
         const dst = path.join(home, "VOICEVOX");
         const backup = stashDir(dst);
@@ -173,7 +184,7 @@ function install({ kind, src, root, app, platform = process.platform }) {
       }
       if (ai) {
         if (isWin(platform)) {
-          const home = path.join(root, ".aivis");
+          const home = path.join(dirs.engine, ".aivis");
           fs.mkdirSync(home, { recursive: true });
           const dst = path.join(home, "AivisSpeech-Engine");
           const backup = stashDir(dst);
@@ -187,7 +198,7 @@ function install({ kind, src, root, app, platform = process.platform }) {
           appDir = path.dirname(appDir);
         }
         if (!/AivisSpeech\.app$/.test(appDir)) throw new Error("找不到 AivisSpeech.app");
-        const home = path.join(root, ".aivis");
+        const home = path.join(dirs.engine, ".aivis");
         fs.mkdirSync(home, { recursive: true });
         const dst = path.join(home, "AivisSpeech.app");
         const backup = stashDir(dst);
@@ -204,7 +215,7 @@ function install({ kind, src, root, app, platform = process.platform }) {
   let dst;
   if (kind === "core") {
     if (base !== "live2dcubismcore.min.js") throw new Error("请拖入 live2dcubismcore.min.js");
-    dst = path.join(root, "lib", base);
+    dst = path.join(dirs.asset, "lib", base);
   } else if (kind === "asr") {
     if (!/\.bin$/i.test(base)) throw new Error("请拖入 ggml-*.bin 模型");
     dst = path.join(root, ".whisper", "models", base);
@@ -249,11 +260,12 @@ const LABELS = {
   tts: "TTS 引擎",
 };
 
-function pick(kind, src, { root, app, platform = process.platform }) {
+function pick(kind, src, { root, assetsDir, userData, app, platform = process.platform }) {
+  const dirs = bases({ root, assetsDir, userData });
   const base = path.basename(src);
   if (kind === "core") {
     if (base !== "live2dcubismcore.min.js") throw new Error("请拖入 live2dcubismcore.min.js");
-    return path.join(root, "lib", base);
+    return path.join(dirs.asset, "lib", base);
   }
   if (kind === "asr") {
     if (!/\.bin$/i.test(base)) throw new Error("请拖入 ggml-*.bin 模型");
@@ -268,7 +280,8 @@ function pick(kind, src, { root, app, platform = process.platform }) {
   throw new Error("暂不支持这种资源");
 }
 
-function preview({ kind, src, root, app, platform = process.platform }) {
+function preview({ kind, src, root, assetsDir, userData, app, platform = process.platform }) {
+  const dirs = bases({ root, assetsDir, userData });
   if (!src) throw new Error("没有文件路径");
   const actual = classify(src);
   const actualKind = actual === "voicevox" || actual === "aivis" ? "tts" : actual;
@@ -281,19 +294,19 @@ function preview({ kind, src, root, app, platform = process.platform }) {
   const base = path.basename(src);
   let target;
   if (actual === "core" || actual === "asr" || actual === "aivis-voice") {
-    target = pick(actual, src, { root, app });
+    target = pick(actual, src, { root, assetsDir, userData, app });
   } else if (actual === "model") {
     let name = path.basename(base, path.extname(base)).replace(/-model$/i, "");
     try {
       const hit = entries(src).find((e) => /\.model3\.json$/i.test(e.entryName));
       if (hit) name = path.basename(path.dirname(hit.entryName));
     } catch (e) {}
-    target = path.join(root, "model", name);
+    target = path.join(dirs.asset, "model", name);
   } else if (actual === "voicevox" || actual === "aivis") {
     const aivis = actual === "aivis";
     target = aivis
-      ? (isWin(platform) ? path.join(root, ".aivis", "AivisSpeech-Engine") : path.join(root, ".aivis", "AivisSpeech.app"))
-      : (isWin(platform) ? path.join(root, ".voicevox", "windows", "VOICEVOX") : path.join(root, ".voicevox", "extracted", "VOICEVOX"));
+      ? (isWin(platform) ? path.join(dirs.engine, ".aivis", "AivisSpeech-Engine") : path.join(dirs.engine, ".aivis", "AivisSpeech.app"))
+      : (isWin(platform) ? path.join(dirs.engine, ".voicevox", "windows", "VOICEVOX") : path.join(dirs.engine, ".voicevox", "extracted", "VOICEVOX"));
     return { ok: true, kind: "tts", label: aivis ? "AivisSpeech 引擎" : "VOICEVOX 引擎", target, exists: fs.existsSync(target) };
   } else throw new Error("暂不支持这种资源");
   return { ok: true, kind, label: LABELS[kind] || kind, target, exists: fs.existsSync(target) };

@@ -64,6 +64,21 @@ test("Windows：VOICEVOX 安装到 .voicevox/windows/VOICEVOX", () => {
   assert.ok(fs.existsSync(path.join(root, ".voicevox/windows/VOICEVOX/vv-engine/run.exe")));
 });
 
+test("打包 asar：模型改写到 assetsDir；TTS 改写到 userData", () => {
+  const root = mkRoot();
+  const asarRoot = path.join(root, "resources", "app.asar");
+  const userData = path.join(root, "userData");
+  const assetsDir = path.join(userData, "assets");
+  const { file: modelZip } = mkZip({ "Hiyori/Hiyori.model3.json": "{}" });
+  const model = mod.install({ kind: "model", src: modelZip, root: asarRoot, assetsDir, userData });
+  assert.equal(model.path, path.join(assetsDir, "model", "Hiyori"));
+  const { file: ttsZip } = mkZip({ "VOICEVOX/vv-engine/run.exe": "x" });
+  const tts = mod.install({ kind: "tts", src: ttsZip, root: asarRoot, assetsDir, userData, platform: "win32" });
+  assert.equal(tts.kind, "voicevox");
+  assert.ok(tts.path.startsWith(path.join(userData, ".voicevox")));
+  assert.ok(!tts.path.includes("app.asar"));
+});
+
 test("Windows：Aivis 安装到 .aivis/AivisSpeech-Engine", () => {
   const { file } = mkZip({ "AivisSpeech-Engine/run.exe": "x" });
   const root = mkRoot();

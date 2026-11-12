@@ -17,7 +17,7 @@ module.exports = function createTtsEngine({
     home: def.id === "voicevox" ? VV_HOME : null,
     candidates: () => def.id === "voicevox"
       ? platform.voicevoxEngineCandidates({ root, userData })
-      : platform.aivisEngineCandidates({ root }),
+      : platform.aivisEngineCandidates({ root, userData }),
     args: def.id === "voicevox"
       ? ["--host", "127.0.0.1", "--port", "50021"]
       : ["--host", "127.0.0.1", "--port", "10101", "--no-use_gpu"],

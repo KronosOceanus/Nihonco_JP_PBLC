@@ -191,7 +191,7 @@ const ipc = createIpc({
   setPetSize: (w, h) => windowSvc.setPetSize(w, h),
   registerShortcuts: () => registerGlobalShortcuts(),
   shortcutFailures: () => shortcutFailures,
-  ROOT, VOICE_DIR,
+  ROOT, VOICE_DIR, ASSET_DIR, USER_DATA,
   DATA_DIR: process.env.NIHONCO_DATA_DIR || path.join(ROOT, 'data'),
   asrGpu: require('./agent/asr-gpu'),
 });

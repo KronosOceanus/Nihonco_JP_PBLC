@@ -17,7 +17,7 @@ module.exports = function createIpc(ctx) {
     startAsr, restartAsr, stopAsr, ensureAsr, speakToWav, prewarmPrompts, refreshVoiceCache, ensureTtsEngine,
     openSettings, loadPet, getLevelIdle, getPassThrough, isPackaged,
     menus, setPassThrough,
-    ROOT, DATA_DIR, VOICE_DIR,
+    ROOT, DATA_DIR, VOICE_DIR, ASSET_DIR, USER_DATA,
   } = ctx;
 
   let ipcReady = false;
@@ -57,7 +57,7 @@ module.exports = function createIpc(ctx) {
 
   require('./ipc/settings')({
     settingsHandle, settingsOn, getWin, getSettingsWin, app, dialog, backup, config,
-    agent, refreshVoiceCache, loadPet, isPackaged, shell, voiceSvc, tts, ROOT, DATA_DIR,
+    agent, refreshVoiceCache, loadPet, isPackaged, shell, voiceSvc, tts, ROOT, ASSET_DIR, USER_DATA, DATA_DIR,
     getPetSize, setPetSize, registerShortcuts, shortcutFailures, ensureTtsEngine, speakToWav,
     asrBackends, restartAsr, stopAsr, asrGpu, asrLog, asrSvc, platform,
   });
