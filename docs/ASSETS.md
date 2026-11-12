@@ -48,17 +48,16 @@ AivisSpeech 引擎  AivisSpeech-Engine/run(.exe) 的 zip
 |---|---|---|---|---|---|---|---|
 | **mac 不打包**<br>`npm start` | 项目根 | 项目 `model/<名字>/` | 项目 `lib/live2dcubismcore.min.js` | 项目 `.whisper`（默认）；mlx 可选 `.venv` | 项目 `.voicevox` 或系统安装；可选 | 项目根 `.env` | 项目 `data/` |
 | **mac lite**<br>`npm run build:app:lite` | `Nihonco.app` 是壳，指回项目根 | 不内置 | 不内置 | 项目 `.whisper` | 同上 | 项目根 `.env` | 项目 `data/` |
-| **mac 内部 full**（不公开命令） | `Nihonco.app` 是壳，指回项目根 | 项目根 | 项目根 | 项目 `.whisper`（可选 mlx） | 同上 | 项目根 `.env` | 项目 `data/` |
 | **Windows 不打包**<br>`npm start` | 项目根 | 项目 `model/<名字>/` | 项目 `lib/live2dcubismcore.min.js` | 项目 `.whisper/` | 系统安装 VOICEVOX 或 AivisSpeech；必须其一 | 项目根 `.env` | 项目 `data/` |
 | **Windows lite**<br>`npm run build:win` | `resources/app.asar` | `%APPDATA%\Nihonco\assets\model\<名字>\` | `%APPDATA%\Nihonco\assets\lib\live2dcubismcore.min.js` | 包内 `app.asar.unpacked\.whisper` | 系统安装 VOICEVOX 或 AivisSpeech；不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
-| **Windows 内部 full**（不公开命令） | `resources/app.asar` | 包内 `resources\app.asar.unpacked\model\<名字>\` | 包内 `app.asar\lib\live2dcubismcore.min.js` | 包内 `app.asar.unpacked\.whisper` | 系统安装 VOICEVOX 或 AivisSpeech；不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
 
 补充：
 
 - `NIHONCO_ASSETS` 可以覆盖 lite 的外置资产目录；默认是 `%APPDATA%\Nihonco\assets`（mac 对应 `~/Library/Application Support/Nihonco/assets`）。
-- full 的 `build.files` 默认排除 `model/miku`、`model/樱花miku`、`model/重音`；用这些模型请走 lite。
+
+- 设置页的「资产（当前写入）」显示当前实际写入根：开发是项目根，打包 lite 是 userData/assets。
 - `.env` 在打包版位于数据目录（`%APPDATA%\Nihonco\data\.env`），不是安装目录。
-- Whisper 在 Windows lite/full 都随包；VOICEVOX / AivisSpeech 两边都不随包。
+- Whisper 在 Windows lite 随包；VOICEVOX / AivisSpeech 不随包。
 - Windows 装 VOICEVOX 或 AivisSpeech 任一即可；Aivis 首次启动还要下载 BERT。
 - ASR 默认是 whisper.cpp；mac 可选 mlx，用户通过 `npm run setup:mlx` 准备。
 - TTS 引擎由 Nihonco 管理：切换时停旧启新，外部手动启动的引擎不会被强杀。
@@ -128,9 +127,18 @@ Nihonco 只连接/启动你本机安装的引擎，不打包引擎或模型。
 
 模型下载到 `.whisper/` / `.hf-cache/`，都不进仓库。下载会校验 sha256。
 
+打包版：
+
+```text
+Windows：exe 在 app.asar.unpacked/.whisper
+        用户模型在 %APPDATA%\Nihonco\.whisper\models
+        内置 .whisper/models 作为兜底
+```
+
+
 ## Windows 安装版的资产位置
 
-Windows 的 lite / full 构建规则见 [windows/WINDOWS.md](windows/WINDOWS.md)。
+Windows 的 lite 构建规则见 [windows/WINDOWS.md](windows/WINDOWS.md)。
 这里只讲“资产放哪”。
 
 ### lite
@@ -195,11 +203,6 @@ Copy-Item "D:\downloads\live2dcubismcore.min.js" "$assets\lib\"
 
 也可以用环境变量 `NIHONCO_ASSETS` 指向别的目录。
 
-### full
-
-模型和 Core 已随安装包，用户不需要放。打包前放项目根目录的规则见
-[windows/WINDOWS.md](windows/WINDOWS.md)。
-
 ## 自行更换 Live2D 模型
 
 模型和语音是两套独立配置：换模型不影响声线，换声线也不影响模型。
@@ -225,9 +228,7 @@ Copy-Item "D:\downloads\live2dcubismcore.min.js" "$assets\lib\"
 | 使用方式 | 放置位置 | 说明 |
 |---|---|---|
 | 源码 / 开发运行 | `model/<名字>/` | 设置里的模型下拉会自动扫描 |
-| macOS 内部 full | 项目 `model/<名字>/` | app 是壳，仍读项目目录 |
 | Windows lite | `%APPDATA%\Nihonco\assets\model\<名字>\` | 放好后重启；设置里可「打开资产目录」 |
-| Windows 内部 full | **打包前**放进项目 `model/`，由维护者内部构建 | 安装目录里的模型不建议手改 |
 
 统一要求：目录里必须有 `*.model3.json`。放好后重启应用；设置窗口的模型下拉没出现，先检查文件名和目录层级。
 

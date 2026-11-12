@@ -67,6 +67,12 @@ function extractZip(zip, dest) {
 
 function isWin(platform) { return platform === "win32"; }
 
+/** 当前可写资产根：开发/full = root，打包 asar = assetsDir */
+function assetBase({ root, assetsDir }) {
+  const inAsar = /[\\/]app\.asar([\\/]|$)/.test(String(root || ""));
+  return inAsar ? (assetsDir || path.join(root || "", "assets")) : root;
+}
+
 /** 只有代码真的在 app.asar 里时才改写到可写目录；mac 普通项目路径保持原样。 */
 function bases({ root, assetsDir, userData, whisperModelsDir }) {
   const inAsar = /[\\/]app\.asar([\\/]|$)/.test(String(root || ""));
@@ -74,7 +80,7 @@ function bases({ root, assetsDir, userData, whisperModelsDir }) {
     return { asset: root, engine: root, asr: path.join(root, ".whisper", "models") };
   }
   return {
-    asset: assetsDir || path.join(userData || root, "assets"),
+    asset: assetBase({ root, assetsDir }),
     engine: userData || root,
     asr: whisperModelsDir || path.join(userData || root, ".whisper", "models"),
   };
@@ -315,4 +321,4 @@ function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, app, 
   return { ok: true, kind, label: LABELS[kind] || kind, target, exists: fs.existsSync(target) };
 }
 
-module.exports = { install, preview, rollback };
+module.exports = { install, preview, rollback, assetBase };

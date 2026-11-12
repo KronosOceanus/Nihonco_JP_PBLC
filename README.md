@@ -3,7 +3,7 @@
 一只浮在桌面上的 Live2D 角色：能听你说日语、跟你对话、讲解语法、抽查单词。
 **macOS 与 Windows 都能跑**；语音识别在本机，只有对话文本发给大模型。
 
-当前版本 **v0.7.23**（读音回退到纯 kuromoji）· 变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.7.24**（ASR 平台提示与只保留 lite）· 变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ![界面预览](preview.png)
 
@@ -61,8 +61,7 @@ npm start
 
 安装、GPU 加速包、打包与已知问题统一见 **[docs/windows/WINDOWS.md](docs/windows/WINDOWS.md)**。
 
-Windows 默认 **lite** 打包（不含模型/Core，用户放到 `%APPDATA%\Nihonco\assets`）；
-带资产的完整包仅维护者内部构建，公开仓库不提供。
+Windows 默认 **lite** 打包（不含模型/Core，用户放到 `%APPDATA%\Nihonco\assets`）。
 
 ### 构建
 
@@ -81,11 +80,11 @@ npm run build:win:lite:dir    # 只出目录，便于先试
 npm run build:win:lite:nsis
 ```
 
-公开仓库只提供 lite 构建；`full` 构建仅维护者在私有仓库内部使用，不提供命令。
-所有构建都会先准备 whisper.cpp。`--with-mlx` 只支持 macOS，Windows 没有 mlx。
+只提供 lite 构建。所有构建都会先准备 whisper.cpp。
+`--with-mlx` 只支持 macOS，Windows 没有 mlx。
 
-macOS 的 lite/full `.app` 都是壳，运行时会指回项目根目录，不能单独把 `.app` 拖走；
-Windows 的 lite/full 才是带资源目录的独立包。
+macOS 的 lite `.app` 是壳，运行时会指回项目根目录，不能单独把 `.app` 拖走；
+Windows 的 lite 才是带资源目录的独立包。
 
 ## 配置
 

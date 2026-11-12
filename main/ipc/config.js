@@ -7,6 +7,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   const { validateEnginePath } = require('../../agent/tts-engines');
   const ttsConfig = require('../../agent/tts-config');
   const assetInstall = require('../../agent/asset-install');
+  const ASSET_BASE = assetInstall.assetBase({ root: ROOT, assetsDir: ASSET_DIR });
   const changed = (next) => { try { getWin()?.webContents.send('cfg:changed', next); } catch (_) {} };
 
   const enginePath = (id) => (voiceSvc.enginePath ? voiceSvc.enginePath(id) : "");
@@ -74,7 +75,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   settingsHandle('cfg:open-path', async (e, id) => {
     const assets = require('../../agent/assets');
     let dir = '';
-    if (id === 'assets') dir = assets.ASSET_DIR;
+    if (id === 'assets') dir = ASSET_BASE;
     else if (id === 'data') dir = DATA_DIR;
     else if (id === 'whisper') dir = WHISPER_MODELS_DIR || process.env.NIHONCO_WHISPER_MODELS || path.join(ROOT, '.whisper', 'models');
     else if (id === 'core') {
@@ -301,7 +302,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
       engine: tts.engineName(),
       paths: { model: modelPath || path.join(ROOT, active), core: corePath, voicevox: enginePath('voicevox'), aivis: enginePath('aivis'), asr: has(whisperDir) ? whisperDir : '' },
       dirs: {
-        assets: assets.ASSET_DIR,
+        assets: ASSET_BASE,
         data: DATA_DIR,
         whisper: has(whisperDir) ? whisperDir : '',
         voicevox: enginePath('voicevox') ? path.dirname(enginePath('voicevox')) : '',

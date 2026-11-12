@@ -13,6 +13,11 @@ function mk() {
   return { root, src };
 }
 
+test("资产根：普通项目用 root，asar 包用 assetsDir", () => {
+  assert.equal(mod.assetBase({ root: "/tmp/Nihonco", assetsDir: "/tmp/assets" }), "/tmp/Nihonco");
+  assert.equal(mod.assetBase({ root: "/tmp/Nihonco/resources/app.asar", assetsDir: "/tmp/assets" }), "/tmp/assets");
+});
+
 test("资源安装：Core 复制到 lib/", () => {
   const { root, src } = mk();
   const file = path.join(src, "live2dcubismcore.min.js");

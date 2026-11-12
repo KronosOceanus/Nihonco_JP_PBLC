@@ -75,8 +75,12 @@ curl -s http://127.0.0.1:8765/health
 >
 > 它会装 cmake（进 `.venv`，不动系统）、下源码、编译 `.whisper/whisper-server`、
 > 下 `.whisper/models/ggml-small-q5_1.bin`。Intel Mac 也能用（同一脚本，只是慢一些）。
+>
+> 打包版路径：Windows 的 exe 在 `resources\app.asar.unpacked\.whisper\whisper-server.exe`，
+> 用户拖入的模型在 `%APPDATA%\Nihonco\.whisper\models`；内置 `.whisper/models` 仍作为兜底。
+> 设置页提示会按平台显示，不会再在 Windows 提示 mlx。
 
-> **Windows 上 `ASR_MODEL` 只当模型名用**：`ASR_MODEL=medium` → 找 `.whisper/models/ggml-medium.bin`；
+> **Windows 上 `ASR_MODEL` 只当模型名用**：`ASR_MODEL=medium` → 找用户 `.whisper/models/ggml-medium.bin`，找不到再找内置目录；
 > 带 `/` 的 HF 仓库名会被忽略、回落到 `small`；要指具体文件用 `ASR_MODEL_FILE=/abs/path/ggml-xxx.bin`。
 > 注意目录里找不到指定名字时会**回落到该目录任意一个 `.bin`**（日志里会打印实际加载的文件）。
 

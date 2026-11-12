@@ -164,7 +164,7 @@
 
   <section>
     <h2 class="section-title">资源</h2>
-    <div class="row"><label>资产</label>
+    <div class="row"><label>资产（当前写入）</label>
       <button id="openAssets">打开资产目录</button>
       <span id="dirAssets" class="hint dir-path">—</span>
     </div>
@@ -183,7 +183,7 @@
       <label>ASR</label>
       <div class="stack">
         <span id="statAsr" class="hint asset-stat">—</span>
-        <span class="hint">mlx 模型先跑 <code>npm run setup:mlx</code></span>
+        <span id="asrHint" class="hint">—</span>
       </div>
     </div>
     <div class="row row-top">
@@ -208,11 +208,14 @@
         <span class="hint">选择路径时请选引擎目录里的 <code>run</code>（Windows 为 <code>run.exe</code>）</span>
       </div>
     </div>
-    <div class="row">
-      <label>Aivis 声线</label>
-      <span class="hint">拖入 .aivmx</span>
+    <div class="row row-top">
+      <label>资源安装</label>
+      <div class="hint" style="margin:0; flex:1; min-width:0;">
+        可拖入：Live2D 模型 <code>.zip</code>、Cubism Core <code>.js</code>、ASR 模型 <code>.bin</code>、VOICEVOX / AivisSpeech <code>.zip</code>、Aivis 声线 <code>.aivmx</code>。<br />
+        模型、Cubism Core、VOICEVOX、Aivis 都不随应用分发；<br />
+        装好后重启应用。详见 docs/ASSETS.md。
+      </div>
     </div>
-    <div class="hint">模型、Cubism Core、VOICEVOX、Aivis 都不随应用分发；装好后重启应用。详见 docs/ASSETS.md。</div>
     </div>
   </section>
     <div id="assetInstallPanel" class="asset-panel" hidden>
@@ -273,9 +276,7 @@
       <select id="asrModel"></select>
     </div>
     <p class="hint"><span id="asrInfo">—</span><br>
-      后端 <code>whisper.cpp</code> 需要 <code>.whisper/whisper-server</code>；<code>mlx</code> 需要
-      <code>.venv</code>（Python），切换后会自动重启识别服务（几秒）。<br>
-      模型清单来自 <code>.whisper/models</code>（ggml）与 <code>.hf-cache</code>（mlx）。</p>
+      <span id="asrDetail">—</span></p>
     <div class="row"><label>日志</label>
       <button id="asrLog" class="pill" data-tip="记录每次识别的耗时/引擎/文本（不存音频）">—</button>
       <span id="asrLogPath" class="log-path"></span>

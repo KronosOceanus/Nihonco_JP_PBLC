@@ -2,12 +2,11 @@
 /* 统一构建入口
  *
  *   node tools/build-app.mjs --target=mac --mode=lite
- *   node tools/build-app.mjs --target=mac --mode=full --with-mlx
+ *   node tools/build-app.mjs --target=mac --mode=lite --with-mlx
  *   node tools/build-app.mjs --target=win --mode=lite
- *   node tools/build-app.mjs --target=win --mode=full --dir
+ *   node tools/build-app.mjs --target=win --mode=lite --dir
  *
- * lite: 只要求 ASR；Live2D/VOICEVOX 可缺
- * full: 要求 Live2D Core + 模型；ASR 也会强制检查
+ * 只支持 lite：只要求 ASR；Live2D/VOICEVOX 外置。
  * --with-mlx: macOS 额外准备 mlx 环境并预下载模型
  */
 import fs from "node:fs";
@@ -25,6 +24,7 @@ const get = (name, fallback) => {
 const has = (name) => args.includes(`--${name}`) || process.env[name.toUpperCase().replace(/-/g, "_")] === "1";
 const target = get("target", process.platform === "darwin" ? "mac" : "win");
 const mode = get("mode", "lite");
+if (mode !== "lite") throw new Error("只支持 lite 构建");
 const dir = has("dir");
 const format = get("format", "");
 const withMlx = has("with-mlx");
@@ -32,7 +32,7 @@ const isMac = target === "mac";
 const isWin = target === "win";
 
 if (!["mac", "win"].includes(target)) throw new Error("--target 只能是 mac 或 win");
-if (!["lite", "full"].includes(mode)) throw new Error("--mode 只能是 lite 或 full");
+
 if (withMlx && !isMac) throw new Error("--with-mlx 只支持 macOS");
 if (dir && !isWin) throw new Error("--dir 只支持 Windows");
 if (format && !["nsis", "portable"].includes(format)) throw new Error("--format 只能是 nsis 或 portable");
@@ -55,23 +55,22 @@ function checkNode() {
 }
 
 function buildMac() {
-  run(process.execPath, [path.join(ROOT, "tools/check-assets.mjs"), ...(mode === "lite" ? ["--lite"] : [])]);
+  run(process.execPath, [path.join(ROOT, "tools/check-assets.mjs"), "--lite"]);
   run(process.execPath, [path.join(ROOT, "tools/setup-whisper.mjs")]);
   if (withMlx) ensureMlx();
   run("bash", [path.join(ROOT, "tools", "build-app.sh")]);
 }
 
 function buildWin() {
-  run(process.execPath, [path.join(ROOT, "tools/check-assets.mjs"), ...(mode === "lite" ? ["--lite"] : [])]);
+  run(process.execPath, [path.join(ROOT, "tools/check-assets.mjs"), "--lite"]);
   run(process.execPath, [path.join(ROOT, "tools/setup-whisper.mjs")]);
-  const cfg = mode === "lite" ? ["--config", path.join(ROOT, "electron-builder.lite.js")] : [];
   const targetArgs = dir
-    ? ["--win", "--x64", "--dir", ...cfg]
-    : ["--win", ...(format ? [format] : []), "--x64", ...cfg];
+    ? ["--win", "--x64", "--dir"]
+    : ["--win", ...(format ? [format] : []), "--x64"];
   run(process.platform === "win32" ? "npx.cmd" : "npx", ["electron-builder", ...targetArgs]);
 }
 
-console.log(`== 构建 ${target} / ${mode}${withMlx ? " / mlx" : ""}${dir ? " / dir" : ""}`);
+console.log(`== 构建 ${target} / lite${withMlx ? " / mlx" : ""}${dir ? " / dir" : ""}`);
 checkNode();
 if (isMac) buildMac(); else buildWin();
 console.log("\n✅ 构建完成");

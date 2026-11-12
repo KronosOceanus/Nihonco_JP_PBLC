@@ -118,7 +118,7 @@
 │   ├── setup.mjs         # 跨平台环境体检 + 生成 .env（Windows 用这个）
 │   ├── setup-whisper.mjs # npm run setup:whisper：编 whisper-server + 下/校验模型
 │   ├── setup-mlx.mjs     # npm run setup:mlx：mlx venv + 预热模型
-│   ├── build-app.mjs     # 统一 lite/full、mac/Windows 构建入口
+│   ├── build-app.mjs     # 统一 lite、mac/Windows 构建入口
 │   ├── snapshot-readings.mjs # npm run snapshot:readings：生成读音快照
 │   ├── build-app.sh      # 底层 mac 壳打包脚本
 │   ├── scan.mjs          # npm run scan：项目自检（自动发现 agent 模块）
@@ -371,7 +371,7 @@ Windows 的 `netstat -ano` 输出（IPv4/IPv6、LISTENING/ESTABLISHED）和 mac 
 装出来的包才会坏——主进程 `require` 直接 ENOENT，页面脚本 404。
 
 `model/` 与 `lib/live2dcubismcore.min.js` 由用户自备（见 `docs/ASSETS.md`），
-打包前 `npm run check:assets` 会检查；`npm run scan` 允许这两个路径缺失。
+打包前 `npm run check:assets:lite` 会检查；`npm run scan` 允许这两个路径缺失。
 
 `npm run scan` 的 `[11] 打包覆盖` 会拦住这类问题：
 

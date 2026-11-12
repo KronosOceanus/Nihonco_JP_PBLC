@@ -41,7 +41,7 @@ npm run setup:whisper
 # 4. 填 API key（也可以启动后在设置窗口里填）
 vim .env          # LLM_API_KEY=sk-...
 
-# 5. 构建（没有 Live2D 资产用 lite）
+# 5. 构建（lite）
 npm run build:app:lite    # 不要求 Live2D
 open Nihonco.app          # 或 npm start（开发调试，不打包直接跑）
 ```
@@ -113,5 +113,5 @@ curl 127.0.0.1:8765/health          # 应用启动后应返回 {"ok":true,...}
 
 Windows 的安装、打包与已知问题统一在 [windows/WINDOWS.md](windows/WINDOWS.md)。
 
-默认 `npm run build:win:lite` 是 **lite**（不含模型/Core）；公开仓库不提供 full 构建命令。
+默认 `npm run build:win:lite` 是 **lite**（不含模型/Core）。
 构建会先准备 whisper.cpp；lite 的资产放到 `%APPDATA%\Nihonco\assets`。

@@ -11,6 +11,28 @@ function cfgLang() {
   return (cfg() && cfg().asr && cfg().asr.lang) || "JA";
 }
 
+function setAsrHint(opt) {
+  const el = $("asrHint");
+  if (!el || !opt) return;
+  el.innerHTML = opt.isWin
+    ? 'whisper.cpp：拖入 <code>ggml-*.bin</code>，或先跑 <code>npm run setup:whisper</code>'
+    : 'whisper.cpp 默认；mlx 模型先跑 <code>npm run setup:mlx</code>';
+}
+
+function setAsrDetail(opt) {
+  const el = $("asrDetail");
+  if (!el || !opt) return;
+  const esc = (v) => String(v || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  if (opt.isWin) {
+    el.innerHTML = `后端 <code>whisper.cpp</code> 需要 <code>${esc(opt.whisperHome)}</code> 里的 whisper-server；<br>` +
+      `用户模型来自 <code>${esc(opt.whisperModelsDir)}</code>，内置目录兜底；切换后自动重启识别服务。`;
+  } else {
+    el.innerHTML = `后端 <code>whisper.cpp</code> 需要 <code>.whisper/whisper-server</code>；<code>mlx</code> 需要 ` +
+      `<code>.venv</code>（Python），切换后自动重启识别服务。<br>` +
+      `模型清单来自 <code>.whisper/models</code>（ggml）与 <code>.hf-cache</code>（mlx）。`;
+  }
+}
+
 function setAsrInfoLine(opt, lang) {
   const el = $("asrInfo");
   if (!el || !opt) return;
@@ -22,6 +44,19 @@ function setAsrInfoLine(opt, lang) {
 function fillModelOptions(md, list, cur, dflt) {
   if (!md) return;
   md.innerHTML = "";
+  if (!list || !list.length) {
+    const o = document.createElement("option");
+    o.value = "";
+    o.textContent = "没有模型：请拖入 ggml-*.bin";
+    o.disabled = true;
+    o.selected = true;
+    md.appendChild(o);
+    const apply = $("applyAsr");
+    if (apply) apply.disabled = true;
+    return;
+  }
+  const apply = $("applyAsr");
+  if (apply) apply.disabled = false;
   const seen = new Set();
   for (const m of list) {
     const o = document.createElement("option");
@@ -61,6 +96,8 @@ async function renderAsr(cfg) {
   be.value = opt.backend;
   const list = opt.backend === "whispercpp" ? opt.wcppModels : opt.mlxModels;
   fillModelOptions(md, list, opt.model, opt.defaultModel);
+  setAsrHint(opt);
+  setAsrDetail(opt);
   setAsrInfoLine(opt, cfgLang());
 }
 

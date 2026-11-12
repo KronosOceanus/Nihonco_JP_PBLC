@@ -128,7 +128,7 @@ function info(root = ROOT) {
     defaults: { mlx: smallest(mlxList), whispercpp: smallest(wcppList) },
     backends: [
       {
-        id: "whispercpp", label: "whisper.cpp（Metal，免 Python）",
+        id: "whispercpp", label: IS_WIN ? "whisper.cpp（CPU / CUDA，免 Python）" : "whisper.cpp（Metal，免 Python）",
         available: av.wcpp,
         hint: av.wcpp ? ""
           : (!av.wcppBin ? "缺 .whisper/whisper-server：跑 npm run setup:whisper"
@@ -142,6 +142,9 @@ function info(root = ROOT) {
     ].filter((b) => !b.hidden),
     mlxModels: mlxList,
     wcppModels: wcppList,
+    whisperHome: process.env.WHISPER_HOME || path.join(ROOT, ".whisper"),
+    whisperModelsDir: whisperModelsDir(),
+    hfCache: path.join(ROOT, ".hf-cache"),
     isWin: IS_WIN,
   };
 }

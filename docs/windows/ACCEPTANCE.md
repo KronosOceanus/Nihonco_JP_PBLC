@@ -149,7 +149,7 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.
 %APPDATA%\Nihonco\assets\lib\live2dcubismcore.min.js
 ```
 
-放好后重启。放好后重启即可。
+放好后重启。
 
 ## 8. 安装后验收
 

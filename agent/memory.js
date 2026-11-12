@@ -108,14 +108,15 @@ function normalize(raw) {
   d.profile.nickname_reading = kanaReading(raw.profile?.nickname_reading);
   d.profile.level = validLevel(raw.profile?.level);
   for (const k of PROFILE_ARRAYS) d.profile[k] = uniq(raw.profile?.[k]).slice(0, 20);
+  trimProfile(d.profile);
   d.relation.familiarity = clampFamiliarity(raw.relation?.familiarity);
   d.relation.tone = text(raw.relation?.tone, 20) || "casual";
   d.relation.address = text(raw.relation?.address, 20);
   d.relation.note = text(raw.relation?.note, 120);
-  d.episodes = (Array.isArray(raw.episodes) ? raw.episodes : [])
+  d.episodes = dedupeEpisodes((Array.isArray(raw.episodes) ? raw.episodes : [])
     .map(normalizeEpisode)
-    .filter((e) => e.id && e.summary)
-    .slice(0, MAX_EPISODES);
+    .filter((e) => e.id && e.summary));
+  trimEpisodes(d.episodes);
   return d;
 }
 
@@ -153,6 +154,22 @@ function trimEpisodes(list) {
     evicted.push(list.splice(i, 1)[0]);
   }
   return evicted;
+}
+
+/** episode 完全按规范化 summary 去重；合并 tags，保留较高 weight */
+function dedupeEpisodes(list) {
+  const out = [];
+  const seen = new Map();
+  for (const e of list) {
+    const key = norm(e.summary);
+    if (!key) continue;
+    const prev = seen.get(key);
+    if (!prev) { seen.set(key, e); out.push(e); continue; }
+    prev.tags = uniq([...(prev.tags || []), ...(e.tags || [])]).slice(0, 8);
+    prev.weight = Math.max(Number(prev.weight) || 1, Number(e.weight) || 1);
+    prev.updatedAt = nowIso();
+  }
+  return out;
 }
 
 function bigrams(s) {
@@ -248,6 +265,7 @@ class MemoryStore {
           if (!e.id) e.id = `e${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
           if (e.summary) {
             this.data.episodes.push(e);
+            this.data.episodes = dedupeEpisodes(this.data.episodes);
             applied.push({ op, type, id: e.id });
           }
         } else if (op === "update") {
@@ -275,6 +293,8 @@ class MemoryStore {
         }
       }
     }
+    for (const key of PROFILE_ARRAYS) this.data.profile[key] = uniq(this.data.profile[key]);
+    this.data.episodes = dedupeEpisodes(this.data.episodes);
     evicted.push(...trimProfile(this.data.profile));
     evicted.push(...trimEpisodes(this.data.episodes));
     if (applied.length || evicted.length) this.save();
@@ -346,6 +366,28 @@ class MemoryStore {
     return lines.join("\n").slice(0, 1200);
   }
 
+  /** 自动巩固：规范化去重 + 上限淘汰；不调用 LLM，不删用户可解释的原文 */
+  consolidate() {
+    if (!this.data) this.load();
+    let profileBefore = profileCount(this.data.profile);
+    let episodesBefore = this.data.episodes.length;
+    for (const key of PROFILE_ARRAYS) this.data.profile[key] = uniq(this.data.profile[key]);
+    this.data.episodes = dedupeEpisodes(this.data.episodes);
+    const evictedProfile = trimProfile(this.data.profile);
+    const evictedEpisodes = trimEpisodes(this.data.episodes);
+    const changed = profileBefore !== profileCount(this.data.profile)
+      || episodesBefore !== this.data.episodes.length
+      || evictedProfile.length || evictedEpisodes.length;
+    if (changed) this.save();
+    return {
+      ok: true,
+      profileRemoved: profileBefore - profileCount(this.data.profile),
+      episodesRemoved: episodesBefore - this.data.episodes.length,
+      evictedProfile: evictedProfile.length,
+      evictedEpisodes: evictedEpisodes.length,
+    };
+  }
+
   clear() {
     this.data = blank();
     this.save();
@@ -360,5 +402,5 @@ function createMemory(opts) {
 module.exports = {
   MemoryStore, createMemory,
   PROFILE_ARRAYS, MAX_PROFILE_ITEMS, MAX_EPISODES, MAX_SUMMARY,
-  blank, normalize, trimProfile, trimEpisodes, validLevel, kanaReading, cleanNickname,
+  blank, normalize, trimProfile, trimEpisodes, dedupeEpisodes, validLevel, kanaReading, cleanNickname,
 };

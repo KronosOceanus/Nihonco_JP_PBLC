@@ -64,6 +64,32 @@ test("称呼读音独立保存；等级只接受 N5–N1；年龄不落盘", () 
   assert.ok(!m.snapshot().profile.interests.includes("27岁"));
 });
 
+test("3C 自动巩固：相同 episode 合并 tags/weight，不重复写", () => {
+  const { m } = temp();
+  m.addEpisode({ id: "e1", at: "2026-11-01", topic: "电影", summary: "说想去看电影", tags: ["电影"], weight: 2 });
+  m.addEpisode({ id: "e2", at: "2026-11-02", topic: "电影", summary: "说想去看电影", tags: ["周末"], weight: 4 });
+  const eps = m.snapshot().episodes;
+  assert.equal(eps.length, 1);
+  assert.deepEqual(eps[0].tags, ["电影", "周末"]);
+  assert.equal(eps[0].weight, 4);
+});
+
+test("3C 自动巩固：load 时也会去重并压到上限", () => {
+  const { dir, m } = temp();
+  const raw = {
+    version: 1,
+    profile: { interests: ["电影", "电影", "动画"], goals: [], preferences: [], boundaries: [] },
+    relation: {},
+    episodes: Array.from({ length: 13 }, (_, i) => ({ id: `e${i + 1}`, topic: "话题", summary: `第 ${i + 1} 条`, weight: 1 })),
+  };
+  fs.writeFileSync(path.join(dir, "persona.json"), JSON.stringify(raw));
+  m.load();
+  assert.deepEqual(m.snapshot().profile.interests, ["电影", "动画"]);
+  assert.equal(m.snapshot().episodes.length, 12);
+  const r = m.consolidate();
+  assert.equal(r.ok, true);
+});
+
 test("context 注入 profile 与相关 episode，不注入无关经历", () => {
   const { m } = temp();
   m.addProfile("nickname", "阿林");

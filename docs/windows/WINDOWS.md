@@ -1,9 +1,8 @@
 # Windows：差异、安装与打包
 
-> 当前验收版本：**v0.7.19**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
+> 当前验收版本：**v0.7.23**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
 >
-> ⚠️ **公开仓库只提供 lite 构建（不含模型/Core）。**
-> full 构建仅维护者在私有仓库内部使用，不提供命令。
+> `npm run build:win` 默认是 lite（不含模型/Core）。本项目只提供 lite 构建。
 >
 > 编号沿用历史版本，所以有跳跃；历史记录已移除，保留当前可用的安装/打包流程。
 
@@ -387,19 +386,16 @@ POST /asr?lang=ja&prompt=<热词>
 
 ---
 
-### 4. lite / full 构建规则
+### 4. lite 构建规则
 
-| | lite（默认） | full |
-|---|---|---|
-| 命令 | `build:win` / `build:win:dir` | 内部使用，不公开 |
-| 模型 / Core | 不含 | 含 |
-| Whisper | 含 | 含 |
-| 资产位置 | 用户放 `%APPDATA%\Nihonco\assets` | 安装包内 |
-| 分发 | 可公开 | 仅自己用，模型/Core 属于再分发 |
-| 检查 | `check:assets:lite` | `check:assets` |
-
-full 的 `build.files` 默认排除 `model/miku`、`model/樱花miku`、`model/重音`；
-用这些模型请走 lite + 外置 assets。
+| | lite |
+|---|---|
+| 命令 | `build:win` / `build:win:dir` |
+| 模型 / Core | 不含，用户外置 |
+| Whisper | 含 |
+| 资产位置 | `%APPDATA%\Nihonco\assets` |
+| 分发 | 可公开 |
+| 检查 | `check:assets:lite` |
 
 ### 4.1 构建命令
 
@@ -414,6 +410,7 @@ npm run check:assets:lite
 npm start
 npm run build:win:dir      # lite → dist\win-unpacked\Nihonco.exe
 npm run build:win          # lite NSIS + portable
+
 ```
 
 产物（`dist/`）：
@@ -422,13 +419,9 @@ npm run build:win          # lite NSIS + portable
 |---|---|
 | `Nihonco-<版本>-lite-setup.exe` | lite NSIS：不含 model/Core；用户放 `%APPDATA%\Nihonco\assets` |
 | `Nihonco-<版本>-lite-portable.exe` | lite 绿色版；首次启动先解压 |
-| `Nihonco-<版本>-setup.exe` | full NSIS：含 model/Core，仅自己用 |
-| `Nihonco-<版本>-portable.exe` | full 绿色版 |
 | `win-unpacked/` | 免安装目录版，调试用 |
 
-> 体积参考（0.2.0 实测，后续版本会变）：setup ~546 MB、portable ~531 MB、装完 ~898 MB。
-> 构成：Electron 本体 + `app.asar` + `.whisper`（模型占大头）+ `model/`。
-> **模型/Core 打包进安装包 = 再分发**，公开分发前必须换成有许可的模型（见 `docs/ASSETS.md`）。
+> 体积参考（后续版本会变）：lite 含 Electron、`app.asar` 和 `.whisper` 模型。
 
 > **VOICEVOX / AivisSpeech 不进安装包**。分发时让用户自己装，或把
 > `vv-engine` 放到 `%APPDATA%\Nihonco\.voicevox\windows\` 下（安装目录只读，别往那里放）。
@@ -627,8 +620,7 @@ spawn 失败（exe 损坏 / 被杀软隔离 / 不是合法 PE）
 
 实测（本机）：CPU 2.7 s；CUDA 12.4 版预期 0.3–0.5 s（待实测，包 685 MB）。
 
-> 还没做：下载器 + 设置窗口的「引擎/模型」区块（进度条、切换、回退）。
-> 目前只能手动把解压好的 CUDA 目录放到 `%APPDATA%\Nihonco\asr\cuda-12.4\`。
+> 设置 → ASR 已有 GPU 下载/取消/卸载/切换；GPU 连续失败状态会显示在 ASR 区域。
 
 ---
 
