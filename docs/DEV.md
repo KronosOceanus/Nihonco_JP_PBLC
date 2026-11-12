@@ -1,83 +1,252 @@
 # 开发与自检
 
-本地测试、端到端冒烟、结构扫描。
+本地运行、测试、端到端冒烟、结构扫描。
 
-## 开发自检
+---
 
-常用脚本：
+## 1. 常用命令
 
 | 命令 | 作用 |
 |---|---|
-| `npm start` / `npm run pet` | 开发模式直接跑（不打包） |
-| `npm run setup` | 生成 `.env`；可选建 Python venv |
-| `npm run setup:whisper` | 编译 whisper.cpp + 下载/校验模型（默认 ASR） |
+| `npm start` / `npm run pet` | 开发模式直接跑，不打包 |
+| `npm run setup` | 生成 `.env`；可选创建 Python venv |
+| `npm run setup:whisper` | 编译 whisper.cpp + 下载/校验模型 |
 | `npm run setup:mlx` | 建 `.venv` + 下载/预热 mlx 模型（mac 可选） |
-| `npm run build:app:lite` | 生成 ASR 版 `Nihonco.app`（不含 Live2D） |
-| `npm run build:app:lite:mlx` | lite + mlx 环境 |
 | `npm test` | 跑 `tests/` 下全部 `*.test.mjs` |
-| `npm run test:watch` | 监听模式 |
-| `npm run scan` | 结构扫描（模块导出、IPC、提示词契约、DOM id、死代码） |
-| `npm run smoke` | **端到端冒烟测试**：真启动 Electron，切一遍模式，断言界面显隐（约 25 秒） |
-| `npm run smoke:settings` | 真启动设置页，验证注册表、控件和语音参数保存 |
+| `npm run test:watch` | 监听测试 |
+| `npm run scan` | 结构扫描 |
+| `npm run smoke` | 真启动 Electron，切模式并断言界面 |
+| `npm run smoke:settings` | 真启动设置页，验证模块、控件、保存 |
+| `npm run build:app` | mac lite（等同 `build:app:lite`） |
+| `npm run build:app:lite` | mac lite，不含 Live2D |
+| `npm run build:app:lite:mlx` | lite + mlx 环境/模型 |
+| `npm run build:win` | Windows lite（NSIS + portable） |
+| `npm run build:win:lite:dir` | 只出目录，便于先试 |
+| `npm run check:assets:lite` | 打包前资产检查 |
+| `npm run release -- 0.7.x` | 发版：改版本、CHANGELOG、测试、tag |
 | `npm run build:jlpt` | 重新生成 `data/jlpt.json` |
+| `npm run snapshot:readings` | 生成读音快照 |
+| `npm run demo` | 演示脚本，不打包 |
 
-测试文件全部放在 `tests/`（新增文件会自动被 `npm test` 收进来，不必改文档）。
+当前只提供 lite 构建，没有 full 命令。
+
+---
+
+## 2. 行为测试
 
 ```bash
-npm test        # 行为测试：跑 tests/ 下全部 *.test.mjs（用例数见输出）
-npm run scan    # 结构扫描
+npm test
 ```
 
-### 行为测试（`tests/`）
+用 Node 自带 `node:test`，不引第三方测试框架。
 
-用 Node 自带的 `node:test`，**不引第三方依赖**。测试会把数据目录指到临时目录（`NIHONCO_DATA_DIR`），
-不碰你真实的 `data/`。
+测试会把数据目录指到临时目录（`NIHONCO_DATA_DIR`），不碰真实 `data/`。
 
-覆盖范围：罗马字拼写、词库状态机、每日批次与配额、配置读写、事件日志与重放、
-句型数据与判定、录音/播放互斥守卫、**ASR 源码契约**（签名/参数个数/热词接口）、
-**热词取词**（当天批次优先）、**取景原子写**。
+### 当前覆盖
 
-不测的：Live2D 渲染、音频播放、ASR 实际识别（要下模型）、LLM 调用（要联网）。
+```text
+词库状态机 / SRS / 每日批次与配额
+句型数据 / 判定 / 造句规则
+配置读写 / schema 迁移
+事件日志 / 回放 / 备份
+记忆 3C：去重、合并、上限
+快捷键：默认值、冲突、mac 死键
+ASR 后端 / 模型解析 / 契约
+ASR GPU 安装 / CUDA 与 CPU 包识别
+资源预览 / 安装 / 回滚 / 平台对象判断
+录音/播放互斥
+取景原子写
+```
 
-### 端到端冒烟（`tools/smoke.mjs`）
+当前基线：
 
-纯 Node 测试测不到 DOM，所以单独有一条会**真启动 Electron** 的冒烟：
+```text
+340 tests
+338 pass
+2 skipped（运行时 ASR 契约，服务没跑）
+```
+
+### 不测
+
+```text
+Live2D 渲染
+真实音频播放
+ASR 实际识别（要模型/音频）
+LLM 输出质量（要联网）
+Windows 真机
+GUI 视觉回归
+```
+
+---
+
+## 3. 端到端冒烟
+
+纯 Node 测不到 DOM，所以有一条会真拉 Electron：
 
 ```bash
 npm run smoke
 ```
 
-它做的事：用临时数据目录（不碰真实学习记录）启动应用 → 依次走
-`boot → teach → word → pattern → 点回按钮 → conv` → 每步用 `computed style` 采集
-`gLevel / newbatch / review / 错题徽标 / 两个档位 / 两张卡片` 的状态 → 断言。
+流程：
 
-覆盖的是最容易改坏的地方：
+```text
+boot
+→ teach
+→ word
+→ pattern
+→ 点回按钮
+→ conv
+```
 
-- 会話/解説 子模式在切到单词/例文后是否保持
-- 模式切换时的显隐是否符合 `MODE_UI` 表
-- 「復習 · N」徽标是否只在有错题时出现
-- 单词/例文卡片是否真的渲染出来了
-- **健壮性**：`natural` 给 `7 / -1 / 0 / "5" / null / 3.5 / NaN` 时渲染不抛异常
-  （越界值不显示「自然」行；这条就是防"卡片卡住"那类回归的）
+每步用 `computed style` 采集：
 
-实现方式：主进程的 `PET_EVAL` 钩子在渲染层跑一段脚本并打印 JSON，
-`PET_EVAL_EXIT` 让应用跑完就退；脚本解析输出后断言，失败非零退出。
+```text
+gLevel
+newbatch
+review
+错题徽标
+两个档位
+两张卡片
+```
 
-**应用开着也能跑**：脚本会给子进程传临时 `NIHONCO_USER_DATA`（Electron 用户数据目录），
-单实例锁因此互不干扰；真撞上锁时会直接提示「请先退出正在运行的 Nihonco」，而不是只报「没有 eval 输出」。
+断言：
 
-### 结构扫描（`tools/scan.mjs`）
+```text
+会話/解説 子模式切到单词/例文后是否保持
+模式切换显隐是否符合 MODE_UI
+「復習 · N」是否只在有错题时出现
+单词/例文卡片是否渲染
+natural 越界值（7 / -1 / 0 / "5" / null / 3.5 / NaN）不抛异常
+```
 
-改完代码跑一次，专门抓「改了 A 忘了 B」这类问题（7 类）：
+实现：
 
-| 检查 | 抓什么 |
-|---|---|
-| 跨模块调用 | 调用了 `book.xxx()` / `vocab.xxx()`，但那个模块根本没导出（会导致静默失败） |
-| IPC 通道 | 渲染层 `invoke('pet:xxx')` 与主进程注册的通道对不上 |
-| preload 暴露面 | `window.pet.xxx` / `window.cfg.xxx` 在 preload 里没暴露 |
-| JSON 契约 | 契约里要求的字段，`parseTurn` 没保留（模型输出会被丢掉） |
-| 数据文件 | `data/` 下**所有存在**的 JSON 是否合法（本地运行时文件不在就跳过，必需的两份缺失会报错） |
-| 死函数 | 定义了但从没被引用（含回调式引用） |
-| DOM id | JS 里 `getElementById` / `$("id")` / `querySelector("#id")` 引用的 id，HTML 里是否真的存在 |
+```text
+PET_EVAL 在渲染层跑脚本并打印 JSON
+PET_EVAL_EXIT 让应用跑完退出
+```
 
-发现问题时返回退出码 1，可以直接挂到 CI / pre-commit。
+应用开着也能跑：子进程传临时 `NIHONCO_USER_DATA`，单实例锁互不干扰；真撞锁会提示先退出。
+
+---
+
+## 4. 设置页冒烟
+
+```bash
+npm run smoke:settings
+```
+
+真启动设置窗口，验证：
+
+```text
+模块注册
+设置分区
+TTS 引擎/声线
+保存流程
+```
+
+它不能替代真实拖放点击测试。
+
+---
+
+## 5. 结构扫描
+
+```bash
+npm run scan
+```
+
+当前 14 类检查。
+
+| # | 检查 | 抓什么 |
+|---|---|---|
+| 1 | 跨模块调用 | 调用了模块没导出的函数 |
+| 2 | IPC 通道 | 渲染层 invoke 与主进程注册对不上 |
+| 3 | preload 暴露面 | `window.pet.*` / `window.cfg.*` 没暴露 |
+| 4 | JSON 契约 | 契约字段和 `parseTurn` 不一致 |
+| 5 | 数据文件 | `data/` 下 JSON 合法性 |
+| 6 | 死函数 | 定义但从未引用（启发式） |
+| 7 | DOM id | JS 引用的 id 在 HTML 不存在 |
+| 8 | 打包数据白名单 | `SHARED_DATA` 与 data seed 对齐 |
+| 9 | 数据 schema 覆盖 | `backup.js` 的 FILES / SCHEMA_NAME 与 CURRENT 对齐 |
+| 10 | 页面 CSP | 不允许内联脚本/远程脚本/unsafe-eval 放宽 |
+| 11 | 打包覆盖 | require / script / link 是否被 `build.files` glob 覆盖 |
+| 12 | main 注入边界 | main 模块裸用全局变量 |
+| 13 | IPC 依赖注入 | 解构了没传、用了没解构 |
+| 14 | 渲染层全局声明 | pet / settings 共享作用域顶层重名 |
+
+失败返回退出码 1，可挂 CI / pre-commit。
+
+---
+
+## 6. 测试数据与夹具
+
+```text
+tests/fixtures/
+  读音、ASR 契约、例句等固定输入
+```
+
+原则：
+
+```text
+测试数据放临时目录
+不读真实 wordbook / settings / persona
+需要 zip 的测试用 AdmZip 现场生成
+```
+
+---
+
+## 7. 首次启动自检
+
+```bash
+npm run scan
+curl http://127.0.0.1:8765/health
+```
+
+`/health` 返回 `ready:false` 表示模型还在加载，不是失败。
+
+## 8. 发版前检查
+
+```bash
+npm test
+npm run scan
+npm run smoke
+npm run smoke:settings
+```
+
+然后：
+
+```bash
+npm run release -- 0.7.x --summary "一句话"
+```
+
+发布脚本会：
+
+```text
+校验版本递增
+改 package.json
+把 CHANGELOG 的「未发布」改成版本标题
+更新 README 版本行
+跑 test + scan
+commit + tag
+可选 push
+```
+
+---
+
+## 9. 开发约定
+
+```text
+改 agent 逻辑 → 跑 npm test
+改 renderer / settings DOM → 跑 smoke:settings / smoke
+改 IPC / 打包 → 跑 npm run scan
+改数据 / 资源 → 跑对应单测 + scan
+```
+
+不要：
+
+```text
+为了整齐重写渲染层
+引入 TypeScript / 打包器
+全仓 Prettier
+把 scan 做成完整 JS 解析器
+```
