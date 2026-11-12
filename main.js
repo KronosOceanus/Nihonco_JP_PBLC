@@ -79,6 +79,11 @@ if (IS_PACKAGED) {
 // 约定见 agent/asr-whispercpp.js：显式/记住的后端优先，起不来自动回落内置 CPU 版
 process.env.NIHONCO_ASR_DIR = path.join(USER_DATA, 'asr');
 
+// 用户自己拖进来的 ggml 模型放这里（可写目录）。whisper 模型搜索顺序：
+// 当前后端目录 → 内置 .whisper/models → 这个用户目录（见 agent/asr-whispercpp.js）
+process.env.NIHONCO_WHISPER_MODELS = process.env.NIHONCO_WHISPER_MODELS
+  || path.join(USER_DATA, 'whisper', 'models');
+
 // 进程登记（procs.json 在 .voice/ 下）
 const procs = createProcs({ file: path.join(VOICE_DIR, 'procs.json'), log: console.log });
 const { rememberProc, killStaleProcs, writeProcs } = procs;

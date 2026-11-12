@@ -31,6 +31,30 @@ test("资源安装：ASR .bin 复制到 .whisper/models/", () => {
   assert.equal(fs.readFileSync(path.join(root, ".whisper/models/ggml-small-q5_1.bin"), "utf8"), "model");
 });
 
+test("打包 asar：ASR .bin 落到 userData/whisper/models，不写 app.asar（.whisper 只读）", () => {
+  const { root, src } = mk();
+  const asarRoot = path.join(root, "resources", "app.asar");
+  const userData = path.join(root, "userData");
+  const file = path.join(src, "ggml-medium-q5_0.bin");
+  fs.writeFileSync(file, "model");
+  const target = path.join(userData, "whisper", "models", "ggml-medium-q5_0.bin");
+
+  const prevEnv = process.env.NIHONCO_WHISPER_MODELS;
+  delete process.env.NIHONCO_WHISPER_MODELS;          // 用 userData 推导，别被跑测试的 shell 影响
+  try {
+    const pv = mod.preview({ kind: "asr", src: file, root: asarRoot, userData });
+    assert.equal(pv.target, target);
+
+    const r = mod.install({ kind: "asr", src: file, root: asarRoot, userData });
+    assert.equal(r.ok, true);
+    assert.equal(r.path, target);
+    assert.ok(fs.existsSync(target));
+    assert.ok(!r.path.includes("app.asar"));
+  } finally {
+    if (prevEnv !== undefined) process.env.NIHONCO_WHISPER_MODELS = prevEnv;
+  }
+});
+
 test("打包 asar：Core 改写到 assetsDir，不写 app.asar", () => {
   const { root, src } = mk();
   const asarRoot = path.join(root, "resources", "app.asar");

@@ -231,6 +231,8 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
       }
     } else if (kind === 'asr') {
       try {
+        // 装上就让它生效：把 ASR_MODEL 指到新装的这个 .bin，再重启识别服务
+        try { config.setEnvValue('ASR_MODEL', path.basename(r.path)); } catch (e) {}
         await asrSvc.restartAsr();
         const p = await asrSvc.probeAsr({ timeoutMs: 30000 });
         const loading = p.status === "loading" || p.status === "starting";

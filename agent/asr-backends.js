@@ -52,17 +52,24 @@ function mlxModels(root = ROOT) {
 function wcppModels(root = ROOT) {
   // 打包后 .whisper 在 app.asar.unpacked（main.js 会设 WHISPER_HOME）
   const home = process.env.WHISPER_HOME || path.join(root, ".whisper");
-  const dir = path.join(home, "models");
-  const out = [];
-  try {
-    for (const f of fs.readdirSync(dir)) {
-      if (!f.endsWith(".bin")) continue;
-      const full = path.join(dir, f);
-      const bytes = fs.statSync(full).size;
-      const mb = Math.round(bytes / 1024 / 1024);
-      out.push({ value: f, label: `${f}（${mb}MB）`, bytes, ready: true });
-    }
-  } catch (e) {}
+  const dirs = [path.join(home, "models")];
+  // 用户拖拽安装的模型（可写目录），和找模型时的搜索顺序保持一致
+  const userDir = process.env.NIHONCO_WHISPER_MODELS;
+  if (userDir && !dirs.includes(userDir)) dirs.push(userDir);
+  const seen = new Map();
+  for (const dir of dirs) {
+    try {
+      for (const f of fs.readdirSync(dir)) {
+        if (!f.endsWith(".bin")) continue;
+        if (seen.has(f)) continue;                 // 同名以内置目录为准
+        const full = path.join(dir, f);
+        const bytes = fs.statSync(full).size;
+        const mb = Math.round(bytes / 1024 / 1024);
+        seen.set(f, { value: f, label: `${f}（${mb}MB）`, bytes, ready: true });
+      }
+    } catch (e) {}
+  }
+  const out = [...seen.values()];
   // 由小到大（按体积，不是文件名）——列表里一眼看出去哪个最轻
   return out.sort((a, b) => a.bytes - b.bytes || a.value.localeCompare(b.value));
 }

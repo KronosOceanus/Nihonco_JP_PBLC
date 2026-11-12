@@ -82,14 +82,8 @@ function readActiveBackend() {
   } catch (e) { return ''; }
 }
 
-function writeActiveBackend(id) {
-  if (!ASR_DIR) return;
-  try {
-    fs.mkdirSync(ASR_DIR, { recursive: true });
-    fs.writeFileSync(path.join(ASR_DIR, 'active.json'),
-      JSON.stringify({ backend: id, at: new Date().toISOString() }, null, 2));
-  } catch (e) {}
-}
+/* active.json 由 agent/asr-gpu.js 统一读写（设置里切换/下载/卸载都走那边）。
+ * 这里刻意不写：GPU 起不来的回落只作用于本轮，避免一次瞬时失败永久降级。 */
 
 /** 选后端：显式/记住的优先（exe 必须存在）→ 任一 GPU 版 → CPU */
 function selectBackend(forceId) {
@@ -140,10 +134,13 @@ function findModel() {
     };
     return lastResolve.file;
   }
-  // 模型只在「内置目录」放一份，GPU 版共用：先找当前后端的 models/，再找内置的
+  // 模型搜索顺序：当前后端目录 → 内置 .whisper/models → 用户目录（拖拽安装的模型）
+  // GPU 版不复制模型，共用这三处的 .bin
   const dirs = [path.join(whisperHome(), 'models')];
   const base = path.join(baseHome(), 'models');
   if (!dirs.includes(base)) dirs.push(base);
+  const userModels = process.env.NIHONCO_WHISPER_MODELS;
+  if (userModels && !dirs.includes(userModels)) dirs.push(userModels);
   const dir = dirs[0];
   const findBin = (name) => dirs.map((d) => path.join(d, name)).find((p) => fs.existsSync(p)) || null;
   const listBins = () => {
@@ -252,12 +249,15 @@ function killChild() {
   ready = false;
 }
 
-/** GPU 后端起不来就回落 CPU：驱动被换/显卡被独占/远程桌面都能自愈 */
+/** GPU 后端起不来就回落 CPU：驱动被换/显卡被独占/远程桌面都能自愈。
+ *  注意：**不写 active.json** —— 一次瞬时失败（端口被占、冷启动慢、显卡被别的程序占）
+ *  不应该让用户永久停在 CPU 上。下次启动仍然先试 GPU；本轮回落的来由报给 /health。 */
+let fallbackInfo = null;      // { from, why }
 async function fallbackToCpu(why) {
   const from = backend().id;
-  log(`⚠ ${why} → ${from} 后端不可用，回落到 CPU（只慢，不会没功能）`);
+  log(`⚠ ${why} → ${from} 后端不可用，本轮临时用 CPU（不改设置，下次启动仍先试 GPU）`);
+  fallbackInfo = { from, why };
   killChild();
-  writeActiveBackend('cpu');
   selectBackend('cpu');
   return waitReady(45000, false);
 }
@@ -274,7 +274,7 @@ async function waitReady(timeoutMs = 60000, allowFallback = true) {
     }
     try {
       const r = await fetch(`http://127.0.0.1:${WPORT}/health`, { signal: AbortSignal.timeout(1000) });
-      if (r.ok) { ready = true; log(`就绪 backend=${backend().id} model=${path.basename(modelPath || '')} ${Date.now() - t0}ms`); return true; }
+      if (r.ok) { ready = true; if (backend().id !== 'cpu') fallbackInfo = null; log(`就绪 backend=${backend().id} model=${path.basename(modelPath || '')} ${Date.now() - t0}ms`); return true; }
     } catch (e) { /* 还没起来 */ }
     await new Promise((r) => setTimeout(r, 400));
   }
@@ -400,6 +400,10 @@ function handle(req, res) {
       modelFallback: !!lastResolve.fallback,
       modelNote: lastResolve.reason || undefined,
       modelFile: name,
+      // GPU 起不来临时回落 CPU 时，把「从哪来 / 为什么」报出去（不改 active.json，
+      // 下次启动仍然先试 GPU）；渲染层可以据此提示「已临时用 CPU，点重试」
+      fallbackFrom: fallbackInfo ? fallbackInfo.from : undefined,
+      fallbackReason: fallbackInfo ? fallbackInfo.why : undefined,
       ready,
       error: ready ? undefined : lastErr || 'starting',
     });

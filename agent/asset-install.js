@@ -67,13 +67,20 @@ function extractZip(zip, dest) {
 
 function isWin(platform) { return platform === "win32"; }
 
-/** 只有代码真的在 app.asar 里时才改写到可写目录；mac 普通项目路径保持原样。 */
+/** 落位根目录：
+ *  · asset   —— Live2D Core / 模型（打包后在 userData/assets）
+ *  · engine  —— TTS 引擎（userData）
+ *  · whisper —— 用户拖进来的 ggml 模型；打包后 .whisper 在 app.asar.unpacked（只读），
+ *               所以必须写到可写的用户目录，主进程用 NIHONCO_WHISPER_MODELS 指过来 */
 function bases({ root, assetsDir, userData }) {
   const inAsar = /[\\/]app\.asar([\\/]|$)/.test(String(root || ""));
-  if (!inAsar) return { asset: root, engine: root };
+  const whisper = process.env.NIHONCO_WHISPER_MODELS
+    || (userData ? path.join(userData, "whisper", "models") : path.join(root || "", ".whisper", "models"));
+  if (!inAsar) return { asset: root, engine: root, whisper };
   return {
     asset: assetsDir || path.join(userData || root, "assets"),
     engine: userData || root,
+    whisper,
   };
 }
 
@@ -218,7 +225,7 @@ function install({ kind, src, root, assetsDir, userData, app, platform = process
     dst = path.join(dirs.asset, "lib", base);
   } else if (kind === "asr") {
     if (!/\.bin$/i.test(base)) throw new Error("请拖入 ggml-*.bin 模型");
-    dst = path.join(root, ".whisper", "models", base);
+    dst = path.join(dirs.whisper, base);
   } else if (kind === "aivis-voice") {
     if (!/\.aivmx$/i.test(base)) throw new Error("请拖入 .aivmx 声线");
     if (isWin(platform)) {
@@ -269,7 +276,7 @@ function pick(kind, src, { root, assetsDir, userData, app, platform = process.pl
   }
   if (kind === "asr") {
     if (!/\.bin$/i.test(base)) throw new Error("请拖入 ggml-*.bin 模型");
-    return path.join(root, ".whisper", "models", base);
+    return path.join(dirs.whisper, base);
   }
   if (kind === "aivis-voice") {
     if (!/\.aivmx$/i.test(base)) throw new Error("请拖入 .aivmx 声线");
