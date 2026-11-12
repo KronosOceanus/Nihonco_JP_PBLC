@@ -275,14 +275,6 @@
       <span class="mini">模型</span>
       <select id="asrModel"></select>
     </div>
-    <p class="hint"><span id="asrInfo">—</span><br>
-      <span id="asrDetail">—</span></p>
-    <div class="row"><label>日志</label>
-      <button id="asrLog" class="pill" data-tip="记录每次识别的耗时/引擎/文本（不存音频）">—</button>
-      <span id="asrLogPath" class="log-path"></span>
-    </div>
-    <p class="hint">每次识别记一行：时间 / 耗时 / 音频大小 / 引擎 / 热词长度 / 文本（只存文本，不存音频）。排查「识别慢」时最有用。</p>
-
     <!-- GPU 加速版 whisper.cpp（Windows）：下载到 %APPDATA%\Nihonco\asr\ -->
     <div class="row" id="gpuRow" style="display:none"><label>识别加速</label>
       <span id="gpuInfo" class="gpu-info">—</span>
@@ -297,7 +289,14 @@
       <button id="gpuCancel" class="pill" style="display:none" data-tip="取消下载/安装：临时文件会被清掉，现有后端不受影响">取消</button>
     </div>
 
-    
+    <p class="hint"><span id="asrInfo">—</span><br>
+      <span id="asrDetail">—</span></p>
+    <div class="row"><label>日志</label>
+      <button id="asrLog" class="pill" data-tip="记录每次识别的耗时/引擎/文本（不存音频）">—</button>
+      <span id="asrLogPath" class="log-path"></span>
+    </div>
+    <p class="hint">每次识别记一行：时间 / 耗时 / 音频大小 / 引擎 / 热词长度 / 文本（只存文本，不存音频）。排查「识别慢」时最有用。</p>
+
   </section>
 
   <hr class="sep" />

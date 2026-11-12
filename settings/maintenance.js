@@ -3,7 +3,7 @@
   const $ = (...a) => window.SettingsApp.$(...a);
   const flash = (...a) => window.SettingsApp.flash(...a);
   const render = (...a) => window.SettingsApp.render(...a);
-  const cfg = () => window.SettingsApp.cfg();
+  const cfg = () => window.SettingsApp.cfg;
 
 function bindDataButtons() {
   const exp = $("exportData"), imp = $("importData"), rst = $("resetData");

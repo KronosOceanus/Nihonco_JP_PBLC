@@ -3,7 +3,7 @@
   const $ = (...a) => window.SettingsApp.$(...a);
   const flash = (...a) => window.SettingsApp.flash(...a);
   const render = (...a) => window.SettingsApp.render(...a);
-  const cfg = () => window.SettingsApp.cfg();
+  const cfg = () => window.SettingsApp.cfg;
 
 let maskedKey = "";
 let pendingKey = "";
@@ -17,7 +17,7 @@ async function loadOllamaModels() {
   try {
     const r = await window.cfg.ollamaModels();
     ollamaModels = (r && r.models) || [];
-    if (ollamaModels.length && window.SettingsApp.cfg()) renderLlm(window.SettingsApp.cfg());
+    if (ollamaModels.length && window.SettingsApp.cfg) renderLlm(window.SettingsApp.cfg);
   } catch (e) {}
 }
 
