@@ -143,10 +143,8 @@ function registerGlobalShortcuts() {
     record: () => send('pet:rec-toggle'),
     mute: () => send('pet:mute-toggle'),
     focus: () => {
-      const w = windowSvc.getWin();
-      if (!w) return;
-      if (!w.isVisible()) w.showInactive();
-      w.webContents.send('pet:focus-input');
+      if (!windowSvc.raisePet({ focus: true })) return;
+      send('pet:focus-input');
     },
   };
   const failed = [];

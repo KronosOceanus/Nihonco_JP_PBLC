@@ -80,7 +80,16 @@ async function createWindow(port) {
   // 这样在别的应用里打字时，输入法不会被我们盖住。
   // 想重新压住全屏应用，可用 PET_LEVEL=screen-saver 启动。
   const LEVEL_TYPING = 'floating';   // 打字时让位给输入法
-  win.setAlwaysOnTop(true, levelIdle);
+  // 初始不置顶：等用户点击/聚焦后再置顶，避免「置顶但没有焦点」导致永久压住别的应用。
+  win.setAlwaysOnTop(false);
+
+  // 桌宠只在被点击/聚焦时置顶；切到别的应用就退到后面，不隐藏。
+  win.on('blur', () => {
+    try { win.setAlwaysOnTop(false); } catch (e) {}
+  });
+  win.on('focus', () => {
+    try { win.setAlwaysOnTop(true, levelIdle); } catch (e) {}
+  });
 
   // Cmd+Ctrl+T：在「压住一切」和「让位给输入法」之间切换
 
@@ -290,7 +299,10 @@ async function createWindow(port) {
 
 function toggleLevelIdle() {
   levelIdle = levelIdle === "floating" ? "screen-saver" : "floating";
-  try { win?.setAlwaysOnTop(true, levelIdle); } catch (e) {}
+  // 只在桌宠当前有焦点时立即应用；否则等下次 focus，避免从别的应用里把它顶上来。
+  if (win?.isFocused()) {
+    try { win.setAlwaysOnTop(true, levelIdle); } catch (e) {}
+  }
   console.log("[level]", levelIdle);
   return levelIdle;
 }
@@ -358,11 +370,27 @@ function setPetSize(w, h) {
   return applyPetSize(w, h, { save: true });
 }
 
-/** 显示 / 隐藏挂件（不抢焦点） */
+/** 快捷键把桌宠抬到前面：显示 + 恢复置顶；focus 时再真正聚焦 */
+function raisePet({ focus = false } = {}) {
+  if (!win) return false;
+  win.show();
+  if (focus) {
+    try { app.focus({ steal: true }); } catch (e) {}
+    win.focus();
+  }
+  // 不在未确认焦点时置顶；真正的 focus 事件会补上置顶。
+  if (win.isFocused()) win.setAlwaysOnTop(true, levelIdle);
+  return true;
+}
+
+/** 显示 / 隐藏挂件（显示时聚焦并恢复置顶，保证之后点到别的应用会触发 blur） */
 function toggleVisibility() {
   if (!win) return false;
   if (win.isVisible()) { win.hide(); return false; }
-  win.showInactive();
+  win.show();
+  win.focus();
+  // 如果 show/focus 还没真正拿到焦点，先不要置顶；focus 事件会补上。
+  win.setAlwaysOnTop(win.isFocused(), levelIdle);
   return true;
 }
 
@@ -379,7 +407,7 @@ function setPassThrough(on) {
   function setStaticPort(p) { staticPort = p; }
   function getStaticPort() { return staticPort; }
 
-  return { createWindow, loadPet, toggleLevelIdle, toggleVisibility, setPassThrough,
+  return { createWindow, loadPet, toggleLevelIdle, toggleVisibility, raisePet, setPassThrough,
            petResize, petResizeEnd, getPetSize, setPetSize,
            getWin, getLevelIdle, getPassThrough, setStaticPort, getStaticPort };
 };

@@ -31,6 +31,15 @@ test("validate：全局必须有修饰键；窗口内可以单键", () => {
   assert.equal(sc.validate("global", "CommandOrControl+Control+Escape").ok, false);
 });
 
+test("mac 不用 ⌥K 死键；默认聚焦是 Alt+J", () => {
+  reset();
+  if (process.platform !== "darwin") return;
+  assert.equal(sc.defaults().global.focus, "Alt+J");
+  assert.equal(sc.validate("global", "Alt+K").ok, false);
+  fs.writeFileSync(`${dir}/shortcuts.json`, JSON.stringify({ global: { focus: "Alt+K" }, local: {} }));
+  assert.equal(sc.load().global.focus, "Alt+J", "旧的死键配置要回落到默认");
+});
+
 test("set：写入后能读回；同 scope 撞键会被拒绝", () => {
   reset();
   const r = sc.set("local", "conv", "9");

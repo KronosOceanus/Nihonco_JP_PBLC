@@ -1,4 +1,4 @@
-# Windows 构建与验收清单（v0.7.19）
+# Windows 构建与验收清单（v0.7.24）
 
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 > 细节和平台差异见 [WINDOWS.md](WINDOWS.md)。
@@ -24,7 +24,7 @@ git log --oneline -3
 确认当前是：
 
 ```text
-v0.7.19
+v0.7.24
 ```
 
 ## 1. 环境

@@ -1,6 +1,6 @@
 # Windows：差异、安装与打包
 
-> 当前验收版本：**v0.7.23**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
+> 当前验收版本：**v0.7.24**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
 >
 > `npm run build:win` 默认是 lite（不含模型/Core）。本项目只提供 lite 构建。
 >

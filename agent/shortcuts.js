@@ -22,10 +22,10 @@ const IS_WIN = platform.IS_WIN;
 
 /* macOS 用 ⌥+键（语音输入类应用的惯例，如 Superwhisper 的 ⌥Space）；
  * Windows 用 Ctrl+Alt+键（Alt+字母会触发菜单栏）。
- * 避开 ⌥E/U/I/N（死键）、⌥Tab、⌥方向键。 */
+ * 避开 ⌥E/U/I/N/K（死键）、⌥Tab、⌥方向键。 */
 const GLOBAL_DEF = IS_WIN
   ? { toggle: "Control+Alt+H", record: "Control+Alt+Space", mute: "Control+Alt+M", focus: "Control+Alt+K" }
-  : { toggle: "Alt+H", record: "Alt+Space", mute: "Alt+M", focus: "Alt+K" };
+  : { toggle: "Alt+H", record: "Alt+Space", mute: "Alt+M", focus: "Alt+J" };
 
 /** 动作清单：id → 显示名 + 默认键 */
 const ACTIONS = {
@@ -53,6 +53,8 @@ const MOD_ALIASES = {
 };
 const MODS = new Set(["CommandOrControl", "Command", "Control", "Alt", "Shift", "Super"]);
 // Electron accelerator 里允许的按键名（够用即可；不接受多字符键名）
+// macOS 上这些 Option+字母 是组合音/死键，不能做全局快捷键
+const MAC_DEAD_KEYS = new Set(["E", "U", "I", "N", "K"]);
 const KEYS = new Set([
   ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
   ..."0123456789".split(""),
@@ -89,6 +91,9 @@ function validate(scope, accel) {
   const key = parts[parts.length - 1];
   const mods = parts.slice(0, -1);
   if (!KEYS.has(key)) return { ok: false, error: `不支持的键：${key}` };
+  if (!IS_WIN && mods.includes("Alt") && MAC_DEAD_KEYS.has(key.toUpperCase())) {
+    return { ok: false, error: `⌥${key} 在 mac 上是组合键，换一个` };
+  }
   if (scope === "global") {
     if (key === "Escape" || key === "Enter" || key === "Tab") return { ok: false, error: "这个键不适合做全局快捷键" };
     if (!mods.some((m) => ["CommandOrControl", "Command", "Control", "Alt", "Super"].includes(m))) {

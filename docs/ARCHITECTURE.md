@@ -22,7 +22,7 @@
 │   │   ├── audio.js      # 声音 + ASR
 │   │   ├── data.js       # 导入导出 / 恢复 / 也算对
 │   │   └── shortcuts.js  # 快捷键
-│   └── window.js         # 主窗口、加载页、层级/穿透、截图钩子
+│   └── window.js         # 主窗口、加载页、层级/穿透、截图钩子（置顶只跟随焦点）
 ├── preload.js            # 暴露给渲染层的 API
 ├── pet.html / pet.js         # 渲染层入口：模型加载、初始化、window.__pet
 ├── renderer/                 # 渲染层拆分后的模块（按顺序加载，共享全局词法作用域）
@@ -267,13 +267,15 @@ settings/index.html #assetDropZone
 ### 支持类型与目标
 
 ```text
-live2dcubismcore.min.js  → lib/
-*.model3.json 的 zip      → model/<目录名>/
-ggml-*.bin                → .whisper/models/
+live2dcubismcore.min.js  → 当前资产根/lib/
+*.model3.json 的 zip      → 当前资产根/model/<目录名>/
+ggml-*.bin                → 当前 ASR 模型目录（打包 Windows 为 userData/.whisper/models）
 *.aivmx                   → AivisSpeech-Engine/Models/
 vv-engine/run(.exe)       → .voicevox/...（Windows 为 .voicevox/windows/...）
 AivisSpeech-Engine/run(.exe) → .aivis/...
 ```
+
+当前资产根：开发/源码运行是项目根，打包 asar 是 `userData/assets`；设置页显示实际写入根。
 
 单文件和 zip 都按内容识别，拖错类型直接拒绝。批量拖入时先逐项识别，再在设置页内确认，能识别的继续安装，识别失败的单独列出。
 

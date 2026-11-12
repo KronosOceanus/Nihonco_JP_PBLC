@@ -54,7 +54,7 @@
 | 右键 → 说话… | 让她主动搭一句话（LLM 现生成） |
 | 右键 → 表情 | 当前模型可触发的表情 / 动作；按 model3、VTube Hotkeys、目录 exp3 自动列出，换模型自动变 |
 | 右键 → 恢复默认大小 / 回到右下角 / 打开项目文件夹 / 退出 | 窗口与项目操作 |
-| `Cmd+Ctrl+T` / `Ctrl+Alt+T` | 置顶开关（mac: `floating` ⇄ `screen-saver`；Windows 只有置顶） |
+| `Cmd+Ctrl+T` / `Ctrl+Alt+T` | 层级切换（mac: `floating` ⇄ `screen-saver`；Windows 只有 topmost 开关） |
 | `Cmd+Ctrl+P` / `Ctrl+Alt+P` | 鼠标穿透开关 |
 
 ## 设置窗口
@@ -216,6 +216,23 @@ hidden → 暂停
 实现：`renderer/model.js` 的渲染 governor + `renderer/audio.js` 的 `isAudioPlaying` / `audio-start` / `audio-end`。  
 暂停只停画面，不停止音频进程；恢复可见/聚焦后自动继续。
 
+## 窗口层级
+
+```text
+启动 / 隐藏后再显示：不抢焦点，不置顶
+点击桌宠或显示快捷键：拿到焦点后才置顶
+点击别的应用：失焦，取消置顶，不隐藏
+```
+
+原则：
+
+```text
+置顶时一定有焦点
+无焦点时一定不置顶
+```
+
+`Cmd+Ctrl+T` / `Ctrl+Alt+T` 只切换层级；桌宠没有焦点时只记住层级，等下次 focus 再应用。
+
 ## 快捷键（agent/shortcuts.js）
 
 - 两类：`global` 走 `globalShortcut`（必须带修饰键），`local` 走渲染层 keydown（可单键）
@@ -224,6 +241,8 @@ hidden → 暂停
   不产生文字的键），功能键没这个问题
 - 改窗口内键后主进程会发 `pet:shortcuts-changed`，渲染层重新拉映射
 - 注册失败（被别的应用占用）只打日志 + 设置里提示（键位显示成红色），不阻塞启动
+- mac 默认：显示/隐藏 `⌥H`、录音 `⌥Space`、静音 `⌥M`、聚焦输入 `⌥J`
+- Windows 默认：显示/隐藏 `Ctrl+Alt+H`、录音 `Ctrl+Alt+Space`、静音 `Ctrl+Alt+M`、聚焦输入 `Ctrl+Alt+K`
 - 录音默认 `⌥Space`（Superwhisper 的惯例）；切换式录音带**静音自动结束**：
   说满一句后静音 N 秒自动停止发送（默认 1.2s，可在设置里 1–5s 调，存 shortcuts.json 的 autoStopSec；
   `rec.js` 里 `rec.lastVoice` + 200ms 轮询），
