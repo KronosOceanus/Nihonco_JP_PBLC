@@ -245,8 +245,11 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
         r.health = { ok: false, error: err?.message || "ASR 重启失败" };
       }
     } else if (kind === 'model') {
-      try { loadPet(); r.health = { ok: true, ready: true }; }
-      catch (err) { r.health = { ok: false, error: err?.message || "模型重载失败" }; }
+      // 必须传窗口：不传会让 loadPet 里 undefined.loadURL 抛成 unhandledRejection
+      try {
+        const ok = await loadPet(getWin());
+        r.health = ok ? { ok: true, ready: true } : { ok: true, ready: true, warning: '窗口未就绪，模型将在下次启动生效' };
+      } catch (err) { r.health = { ok: false, error: err?.message || "模型重载失败" }; }
     }
     if (r.health && !r.health.ok) {
       const rb = assetInstall.rollback(r);
@@ -256,7 +259,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
       } else if (kind === 'asr') {
         try { await asrSvc.restartAsr(); } catch (e) {}
       } else if (kind === 'model') {
-        try { loadPet(); } catch (e) {}
+        try { await loadPet(getWin()); } catch (e) {}
       }
       return {
         ...r,

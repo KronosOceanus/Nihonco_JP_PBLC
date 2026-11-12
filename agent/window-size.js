@@ -1,13 +1,17 @@
 /* 挂件窗口尺寸：读写 data/window.json + 夹取范围
  *
  * 只做纯逻辑（不依赖 electron），方便测试；实际 setBounds 在 main/window.js。
+ *
+ * 注意：路径必须**用到时再算**。这个模块在 main.js 顶部就被 require，
+ * 那时候 NIHONCO_DATA_DIR 还没设好；写死成常量会让打包版把 window.json
+ * 往 app.asar\data 里写 → ENOTDIR（asar 只读）。
  */
 const fs = require("fs");
 const path = require("path");
 const { writeJsonAtomic } = require("./jsonfile");
 
-const DATA_DIR = process.env.NIHONCO_DATA_DIR || path.join(__dirname, "..", "data");
-const FILE = path.join(DATA_DIR, "window.json");
+const dataDir = () => process.env.NIHONCO_DATA_DIR || path.join(__dirname, "..", "data");
+const filePath = () => path.join(dataDir(), "window.json");
 
 const MIN_W = 240;
 const MIN_H = 320;
@@ -24,7 +28,7 @@ function clampSize(w, h, { maxW = 4000, maxH = 4000 } = {}) {
 
 function load() {
   try {
-    const j = JSON.parse(fs.readFileSync(FILE, "utf8"));
+    const j = JSON.parse(fs.readFileSync(filePath(), "utf8"));
     const s = clampSize(j.w, j.h);
     return { w: s.w, h: s.h };
   } catch (e) {
@@ -34,9 +38,13 @@ function load() {
 
 function save({ w, h }) {
   const s = clampSize(w, h);
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  writeJsonAtomic(FILE, s);
+  // 目录不可写（打包后 asar 只读、权限异常）时不要抛：尺寸这次不持久化就是了，
+  // 拖窗口不该因此报 ENOTDIR。
+  try {
+    fs.mkdirSync(dataDir(), { recursive: true });
+    writeJsonAtomic(filePath(), s);
+  } catch (e) {}
   return s;
 }
 
-module.exports = { clampSize, load, save, DEFAULT, MIN_W, MIN_H, FILE };
+module.exports = { clampSize, load, save, DEFAULT, MIN_W, MIN_H, dataDir, filePath };
