@@ -11,7 +11,7 @@ const fs = require("fs");
 const path = require("path");
 
 /** 共享数据表：这些才允许随包分发、也才允许 seed */
-const SHARED_DATA = /^(jlpt|word-levels|kanji-stems|pattern-gloss-zh|patterns-n[1-5]|jmdict-readings|enrich-cache\.seed)\.json$/;
+const SHARED_DATA = /^(jlpt|word-levels|kanji-stems|pattern-gloss-zh|patterns-n[1-5]|enrich-cache\.seed)\.json$/;
 
 /**
  * @param {{packaged:boolean, userData:string, root:string, resourcesPath:string,

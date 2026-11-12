@@ -72,7 +72,6 @@
       "data/jlpt.json",
       "data/word-levels.json",
       "data/kanji-stems.json",
-      "data/jmdict-readings.json",
       "data/pattern-gloss-zh.json",
       "data/patterns-n5.json",
       "data/patterns-n4.json",

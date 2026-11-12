@@ -142,12 +142,6 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.
 
 后两条不应出现。
 
-确认 JMdict 读音表进包：
-
-```powershell
-npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr jmdict-readings
-```
-
 ## 7. lite 资产放置
 
 ```text

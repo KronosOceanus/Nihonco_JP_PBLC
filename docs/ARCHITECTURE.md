@@ -95,7 +95,6 @@
 │   ├── jlpt.json         # 原始 10,169 条 / 去重后 10,109 词（npm run build:jlpt 生成）
 │   ├── word-levels.json  # 把合并的 N5–N4 拆成 N5/N4（tools/build-word-levels.mjs）
 │   ├── kanji-stems.json  # 汉字词干 → 假名（tools/build-kanji-stems.mjs）
-│   ├── jmdict-readings.json   # JMdict 常用词紧凑读音表（约 1.7 万条）
 │   ├── patterns-n5.json  # 81 条 N5 句型（node tools/build-patterns.mjs n5）
 │   ├── patterns-n4.json  # 98 条 N4（参数换 n4；n3/n2/n1 同理，合计 526 条）
 │   ├── enrich-cache.seed.json # 公共例句种子（随仓库）
