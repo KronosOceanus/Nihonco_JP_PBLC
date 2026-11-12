@@ -20,8 +20,12 @@ let staticPort = 0;   // 静态服务端口（设置窗口要用）
 let passThrough = false;
 let levelIdle = process.env.PET_LEVEL || 'floating';   // 常驻层级：floating 不挡输入法 / screen-saver 压住一切
 
-/* 按当前配置加载挂件页（换模型时也走这里） */
+/* 按当前配置加载挂件页（换模型时也走这里）
+ * w 可以不传：默认用当前挂件窗口。传丢了窗口（或窗口已销毁）时直接返回，
+ * 不要把 undefined.loadURL 抛成 unhandledRejection（安装模型后重载就踩过这个）。 */
 async function loadPet(w, overrideFit) {
+  const target = w || win;
+  if (!target || (typeof target.isDestroyed === "function" && target.isDestroyed())) return false;
   const models = require('../agent/models');
   const modelPath = models.activePath();
   const fit = overrideFit || models.fitOf(modelPath);
@@ -36,7 +40,8 @@ async function loadPet(w, overrideFit) {
     f: String(fit.f),
   };
   for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v);
-  await w.loadURL(`http://127.0.0.1:${staticPort}/pet.html${qs.toString() ? '?' + qs : ''}`);
+  await target.loadURL(`http://127.0.0.1:${staticPort}/pet.html${qs.toString() ? '?' + qs : ''}`);
+  return true;
 }
 
 async function createWindow(port) {
