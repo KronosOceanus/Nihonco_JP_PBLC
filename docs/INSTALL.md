@@ -43,13 +43,12 @@ vim .env          # LLM_API_KEY=sk-...
 
 # 5. 构建（没有 Live2D 资产用 lite）
 npm run build:app:lite    # 不要求 Live2D
-# npm run build:app:full  # 需要 model/ + lib/Core
 open Nihonco.app          # 或 npm start（开发调试，不打包直接跑）
 ```
 
 ## 构建产物说明（重要）
 
-`npm run build:app:lite` / `build:app:full` 生成的是**壳**，不是自包含应用：
+`npm run build:app:lite` 生成的是**壳**，不是自包含应用：
 
 ```
 Nihonco.app（~253MB，其中 251MB 是 Electron 本体）
@@ -114,5 +113,5 @@ curl 127.0.0.1:8765/health          # 应用启动后应返回 {"ok":true,...}
 
 Windows 的安装、打包与已知问题统一在 [windows/WINDOWS.md](windows/WINDOWS.md)。
 
-默认 `npm run build:win:lite` 是 **lite**（不含模型/Core）；完整包用 `npm run build:win:full`。
+默认 `npm run build:win:lite` 是 **lite**（不含模型/Core）；公开仓库不提供 full 构建命令。
 构建会先准备 whisper.cpp；lite 的资产放到 `%APPDATA%\Nihonco\assets`。

@@ -12,7 +12,7 @@
 | [JAPANESE-RULES.md](JAPANESE-RULES.md) | 判分、黄卡、SRS、朗读、语言规则、行为变更 |
 | [AUDIO.md](AUDIO.md) | ASR 后端/模型/GPU、TTS 双引擎与朗读规范化 |
 | [DATA.md](DATA.md) | 数据文件、schema、备份、日志 |
-| [windows/WINDOWS.md](windows/WINDOWS.md) | Windows 安装、lite/full 构建规则、GPU、已知问题 |
+| [windows/WINDOWS.md](windows/WINDOWS.md) | Windows 安装、lite 构建规则、GPU、已知问题 |
 | [windows/ACCEPTANCE.md](windows/ACCEPTANCE.md) | Windows 构建与验收清单 |
 
 ## 开发/维护

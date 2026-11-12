@@ -13,7 +13,7 @@
 | `npm run setup:whisper` | 编译 whisper.cpp + 下载/校验模型（默认 ASR） |
 | `npm run setup:mlx` | 建 `.venv` + 下载/预热 mlx 模型（mac 可选） |
 | `npm run build:app:lite` | 生成 ASR 版 `Nihonco.app`（不含 Live2D） |
-| `npm run build:app:full` | 生成带 Live2D 的 `Nihonco.app` |
+| 内部 full | 仅私有仓库维护者使用，公开仓库不提供命令 |
 | `npm run build:app:*:mlx` | 额外带 mlx 环境 |
 | `npm test` | 跑 `tests/` 下全部 `*.test.mjs` |
 | `npm run test:watch` | 监听模式 |

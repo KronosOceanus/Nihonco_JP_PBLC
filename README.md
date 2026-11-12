@@ -62,7 +62,7 @@ npm start
 安装、GPU 加速包、打包与已知问题统一见 **[docs/windows/WINDOWS.md](docs/windows/WINDOWS.md)**。
 
 Windows 默认 **lite** 打包（不含模型/Core，用户放到 `%APPDATA%\Nihonco\assets`）；
-要带资产的完整包用 `npm run build:win:full`。
+带资产的完整包仅维护者内部构建，公开仓库不提供。
 
 ### 构建
 
@@ -70,24 +70,19 @@ macOS：
 
 ```bash
 npm run build:app:lite        # ASR + 应用本体，不含 Live2D
-npm run build:app:full        # 加上 Live2D 模型 + Core
 npm run build:app:lite:mlx    # lite + mlx 环境/模型
-npm run build:app:full:mlx    # full + mlx
 ```
 
 Windows：
 
 ```bash
 npm run build:win:lite        # lite，NSIS + portable
-npm run build:win:full        # full
 npm run build:win:lite:dir    # 只出目录，便于先试
-npm run build:win:full:dir
 npm run build:win:lite:nsis
-npm run build:win:full:nsis
 ```
 
-所有构建都会先准备 whisper.cpp；`full` 还会检查 Live2D Core/模型。
-`--with-mlx` 只支持 macOS，Windows 没有 mlx。
+公开仓库只提供 lite 构建；`full` 构建仅维护者在私有仓库内部使用，不提供命令。
+所有构建都会先准备 whisper.cpp。`--with-mlx` 只支持 macOS，Windows 没有 mlx。
 
 macOS 的 lite/full `.app` 都是壳，运行时会指回项目根目录，不能单独把 `.app` 拖走；
 Windows 的 lite/full 才是带资源目录的独立包。

@@ -3,7 +3,7 @@
 > 直接照这份做；细节见 [WINDOWS.md](WINDOWS.md)。
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 >
-> ⚠️ `npm run build:win` = **lite**（不含模型/Core）；完整包用 `npm run build:win:full`。
+> ⚠️ `npm run build:win` = **lite**（不含模型/Core）；公开仓库不提供 full 构建命令。
 
 ## 0. 旧克隆升级：先备份资产
 
@@ -211,13 +211,6 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr persona
 ```powershell
 npm run build:win:dir      # dist\win-unpacked\Nihonco.exe
 npm run build:win          # NSIS + portable
-```
-
-full（带模型/Core，自己用）：
-
-```powershell
-npm run build:win:full:dir
-npm run build:win:full
 ```
 
 lite 产物名带 `lite`。full 产物沿用原名字。

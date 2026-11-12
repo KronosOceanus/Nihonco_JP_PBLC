@@ -48,10 +48,10 @@ AivisSpeech 引擎  AivisSpeech-Engine/run(.exe) 的 zip
 |---|---|---|---|---|---|---|---|
 | **mac 不打包**<br>`npm start` | 项目根 | 项目 `model/<名字>/` | 项目 `lib/live2dcubismcore.min.js` | 项目 `.whisper`（默认）；mlx 可选 `.venv` | 项目 `.voicevox` 或系统安装；可选 | 项目根 `.env` | 项目 `data/` |
 | **mac lite**<br>`npm run build:app:lite` | `Nihonco.app` 是壳，指回项目根 | 不内置 | 不内置 | 项目 `.whisper` | 同上 | 项目根 `.env` | 项目 `data/` |
-| **mac full**<br>`npm run build:app:full` | `Nihonco.app` 是壳，指回项目根 | 项目根 | 项目根 | 项目 `.whisper`（可选 mlx） | 同上 | 项目根 `.env` | 项目 `data/` |
+| **mac 内部 full**（不公开命令） | `Nihonco.app` 是壳，指回项目根 | 项目根 | 项目根 | 项目 `.whisper`（可选 mlx） | 同上 | 项目根 `.env` | 项目 `data/` |
 | **Windows 不打包**<br>`npm start` | 项目根 | 项目 `model/<名字>/` | 项目 `lib/live2dcubismcore.min.js` | 项目 `.whisper/` | 系统安装 VOICEVOX 或 AivisSpeech；必须其一 | 项目根 `.env` | 项目 `data/` |
 | **Windows lite**<br>`npm run build:win` | `resources/app.asar` | `%APPDATA%\Nihonco\assets\model\<名字>\` | `%APPDATA%\Nihonco\assets\lib\live2dcubismcore.min.js` | 包内 `app.asar.unpacked\.whisper` | 系统安装 VOICEVOX 或 AivisSpeech；不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
-| **Windows full**<br>`npm run build:win:full` | `resources/app.asar` | 包内 `resources\app.asar.unpacked\model\<名字>\` | 包内 `app.asar\lib\live2dcubismcore.min.js` | 包内 `app.asar.unpacked\.whisper` | 系统安装 VOICEVOX 或 AivisSpeech；不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
+| **Windows 内部 full**（不公开命令） | `resources/app.asar` | 包内 `resources\app.asar.unpacked\model\<名字>\` | 包内 `app.asar\lib\live2dcubismcore.min.js` | 包内 `app.asar.unpacked\.whisper` | 系统安装 VOICEVOX 或 AivisSpeech；不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
 
 补充：
 
@@ -225,9 +225,9 @@ Copy-Item "D:\downloads\live2dcubismcore.min.js" "$assets\lib\"
 | 使用方式 | 放置位置 | 说明 |
 |---|---|---|
 | 源码 / 开发运行 | `model/<名字>/` | 设置里的模型下拉会自动扫描 |
-| macOS `build:app:full` | 项目 `model/<名字>/` | app 是壳，仍读项目目录 |
+| macOS 内部 full | 项目 `model/<名字>/` | app 是壳，仍读项目目录 |
 | Windows lite | `%APPDATA%\Nihonco\assets\model\<名字>\` | 放好后重启；设置里可「打开资产目录」 |
-| Windows full | **打包前**放进项目 `model/`，重新 `npm run build:win:full` | 安装目录里的模型不建议手改 |
+| Windows 内部 full | **打包前**放进项目 `model/`，由维护者内部构建 | 安装目录里的模型不建议手改 |
 
 统一要求：目录里必须有 `*.model3.json`。放好后重启应用；设置窗口的模型下拉没出现，先检查文件名和目录层级。
 

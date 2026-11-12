@@ -2,9 +2,8 @@
 
 > 当前验收版本：**v0.7.8**；后续 TTS/构建改动见 [CHANGELOG.md](../../CHANGELOG.md)。
 >
-> ⚠️ **`npm run build:win` 现在默认是 lite（不含模型/Core）。**
-> 要完整包（模型 + Core 一起进安装包）请用 **`npm run build:win:full`**；
-> `build:win:dir` 同理，`build:win:full:dir` 才是完整目录版。
+> ⚠️ **公开仓库只提供 lite 构建（不含模型/Core）。**
+> full 构建仅维护者在私有仓库内部使用，不提供命令。
 >
 > 编号沿用历史版本，所以有跳跃；历史记录已移除，保留当前可用的安装/打包流程。
 
@@ -392,7 +391,7 @@ POST /asr?lang=ja&prompt=<热词>
 
 | | lite（默认） | full |
 |---|---|---|
-| 命令 | `build:win` / `build:win:dir` | `build:win:full` / `build:win:full:dir` |
+| 命令 | `build:win` / `build:win:dir` | 内部使用，不公开 |
 | 模型 / Core | 不含 | 含 |
 | Whisper | 含 | 含 |
 | 资产位置 | 用户放 `%APPDATA%\Nihonco\assets` | 安装包内 |
@@ -415,11 +414,6 @@ npm run check:assets:lite
 npm start
 npm run build:win:dir      # lite → dist\win-unpacked\Nihonco.exe
 npm run build:win          # lite NSIS + portable
-
-# full（自己用）：模型/Core 必须在项目里
-npm run check:assets
-npm run build:win:full:dir
-npm run build:win:full
 ```
 
 产物（`dist/`）：
