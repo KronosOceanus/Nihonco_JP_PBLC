@@ -13,8 +13,8 @@ test("专有名词：Nihonco → にほんこ（所有引擎）", () => {
 });
 
 test("用户昵称：显示用原名，朗读用单独读音", () => {
-  assert.equal(prepare("桃井冬だよ", { userName: "桃井冬", userReading: "ももいとう" }), "ももいとうだよ");
-  assert.equal(prepare("桃井冬だよ", { userName: "桃井冬", userReading: "" }), "桃井冬だよ");
+  assert.equal(prepare("山田だよ", { userName: "山田", userReading: "やまだ" }), "やまだだよ");
+  assert.equal(prepare("山田だよ", { userName: "山田", userReading: "" }), "山田だよ");
 });
 
 test("笑声：句首/标点后的「はは」→ あはは", () => {

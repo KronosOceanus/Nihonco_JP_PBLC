@@ -39,16 +39,16 @@ test("过滤低置信度、未知 profile key、空摘要", () => {
 test("称呼读音单独提取；年龄和非法等级被丢弃", () => {
   const patches = normalizePatches({
     patches: [
-      { op: "update", type: "profile", key: "nickname", value: "桃井冬", confidence: 0.9 },
-      { op: "update", type: "profile", key: "nickname_reading", value: "ももいとう", confidence: 0.9 },
+      { op: "update", type: "profile", key: "nickname", value: "山田", confidence: 0.9 },
+      { op: "update", type: "profile", key: "nickname_reading", value: "やまだ", confidence: 0.9 },
       { op: "update", type: "profile", key: "level", value: "27岁", confidence: 0.9 },
       { op: "add", type: "profile", key: "interests", value: "27岁", confidence: 0.9 },
     ],
   });
   assert.equal(patches.length, 2);
   assert.deepEqual(patches.map((p) => [p.key, p.value]), [
-    ["nickname", "桃井冬"],
-    ["nickname_reading", "ももいとう"],
+    ["nickname", "山田"],
+    ["nickname_reading", "やまだ"],
   ]);
 });
 

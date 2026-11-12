@@ -74,7 +74,7 @@
       const inp = document.createElement("input");
       inp.type = "text";
       inp.value = data.profile[key] || "";
-      inp.placeholder = key === "level" ? "N4" : key === "nickname_reading" ? "ももいとう" : "";
+      inp.placeholder = key === "level" ? "N4" : key === "nickname_reading" ? "やまだ" : "";
       inp.style.flex = "1";
       inp.addEventListener("change", () => patch({ op: "update", type: "profile", key, value: inp.value.trim() }));
       wrap.appendChild(row(LABEL[key], inp));

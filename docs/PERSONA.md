@@ -361,8 +361,8 @@ relation       0–5 熟悉度
 ### 9.2a 字段语义
 
 ```text
-nickname          只写称呼本身，例如「桃井冬」
-nickname_reading  只写平假名读音，例如「ももいとう」
+nickname          只写称呼本身，例如「山田」
+nickname_reading  只写平假名读音，例如「やまだ」
 level             只能是 N5 / N4 / N3 / N2 / N1
 interests / goals / preferences / boundaries
                   每条只写一个短事实

@@ -46,21 +46,21 @@ test("episode 超过 12 条时淘汰低 weight / 较旧条目", () => {
 test("称呼读音独立保存；等级只接受 N5–N1；年龄不落盘", () => {
   const { m } = temp();
   m.patch([
-    { op: "update", type: "profile", key: "nickname", value: "桃井冬" },
-    { op: "update", type: "profile", key: "nickname_reading", value: "ももいとう" },
+    { op: "update", type: "profile", key: "nickname", value: "山田" },
+    { op: "update", type: "profile", key: "nickname_reading", value: "やまだ" },
     { op: "update", type: "profile", key: "level", value: "N4" },
   ]);
-  assert.equal(m.snapshot().profile.nickname, "桃井冬");
-  assert.equal(m.snapshot().profile.nickname_reading, "ももいとう");
+  assert.equal(m.snapshot().profile.nickname, "山田");
+  assert.equal(m.snapshot().profile.nickname_reading, "やまだ");
   assert.equal(m.snapshot().profile.level, "N4");
 
   m.patch([
     { op: "update", type: "profile", key: "level", value: "27岁" },
-    { op: "update", type: "profile", key: "nickname_reading", value: "桃井冬" },
+    { op: "update", type: "profile", key: "nickname_reading", value: "山田" },
     { op: "add", type: "profile", key: "interests", value: "27岁" },
   ]);
   assert.equal(m.snapshot().profile.level, "N4", "非法等级不覆盖原值");
-  assert.equal(m.snapshot().profile.nickname_reading, "ももいとう", "非假名读音不覆盖");
+  assert.equal(m.snapshot().profile.nickname_reading, "やまだ", "非假名读音不覆盖");
   assert.ok(!m.snapshot().profile.interests.includes("27岁"));
 });
 

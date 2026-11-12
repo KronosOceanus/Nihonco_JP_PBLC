@@ -20,8 +20,8 @@ function buildPrompt({ recent = [], snapshot = {} } = {}) {
 - 只记用户明确说过的内容；不要从 Nihonco 自己的回复里提取。
 - 不要推测、不要补全、不要记一次性情绪或临时话题。
 - profile 字段严格按含义使用：
-  nickname 只写称呼本身（如「桃井冬」），不要写「名字为…」「读音为…」
-  nickname_reading 只写平假名读音（如「ももいとう」），不要括号
+  nickname 只写称呼本身（如「山田」），不要写「名字为…」「读音为…」
+  nickname_reading 只写平假名读音（如「やまだ」），不要括号
   level 只能是 N5 / N4 / N3 / N2 / N1；年龄、职业、初级/高级都不是 level
   interests / goals / preferences / boundaries 每条只写一个短事实
   relation.address 只表示称呼方式（さん / ちゃん / 呼び捨て），不写名字
