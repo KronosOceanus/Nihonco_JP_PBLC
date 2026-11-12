@@ -127,6 +127,8 @@ test("info()：返回后端列表、隐藏 Windows 专属项之外的清单", ()
   assert.deepEqual(i.backends.map((b) => b.id),
     process.platform === "win32" ? ["whispercpp"] : ["whispercpp", "mlx"]);
   assert.ok(i.wcppModels.length === 2);
+  assert.equal(typeof i.wcppBin, "boolean", "设置页依赖 wcppBin 判断 CPU 引擎");
+  assert.equal(typeof i.wcpp, "boolean");
   assert.ok(typeof i.backend === "string");
 });
 

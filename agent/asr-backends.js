@@ -144,6 +144,8 @@ function info(root = ROOT) {
     ].filter((b) => !b.hidden),
     mlxModels: mlxList,
     wcppModels: wcppList,
+    wcppBin: av.wcppBin,
+    wcpp: av.wcpp,
     whisperHome: process.env.WHISPER_HOME || path.join(ROOT, ".whisper"),
     whisperModelsDir: whisperModelsDir(),
     hfCache: path.join(ROOT, ".hf-cache"),
