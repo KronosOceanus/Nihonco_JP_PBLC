@@ -119,7 +119,7 @@ async function renderAsrEngine() {
   try { st = await window.cfg.asrEngine(); } catch (e) {}
   try { opt = await window.cfg.asrOptions(); } catch (e) {}
   const isWin = !!st && st.platform === "win32";
-  for (const id of ["asrActualEngineRow", "whisperEngineRow", "whisperModelRow"]) {
+  for (const id of ["asrActualEngineRow", "whisperCudaRow", "whisperCpuRow", "whisperModelRow"]) {
     const el = $(id);
     if (el) el.style.display = isWin ? "" : "none";
   }

@@ -182,9 +182,11 @@
     <div class="row row-top">
       <label>ASR</label>
       <div class="stack">
-        <div class="engine-line" id="whisperEngineRow" style="display:none">
+        <div class="engine-line" id="whisperCudaRow" style="display:none">
           <button id="dlWhisperCuda">下载 Whisper 引擎（CUDA 版）</button>
           <span id="statWhisperCuda" class="hint asset-stat">—</span>
+        </div>
+        <div class="engine-line" id="whisperCpuRow" style="display:none">
           <button id="dlWhisperCpu">下载 Whisper 引擎（CPU 版）</button>
           <span id="statWhisperCpu" class="hint asset-stat">—</span>
         </div>
@@ -220,7 +222,7 @@
     <div class="row row-top">
       <label>资源安装</label>
       <div class="hint" style="margin:0; flex:1; min-width:0;">
-        可拖入：Live2D 模型 <code>.zip</code>、Cubism Core <code>.js</code>、ASR 模型 <code>.bin</code>、VOICEVOX / AivisSpeech <code>.zip</code>、Aivis 声线 <code>.aivmx</code>。<br />
+        可拖入：Live2D 模型 <code>.zip</code>、Cubism Core <code>.js</code>、ASR 模型 <code>.bin</code>、Whisper CUDA <code>.zip</code>、VOICEVOX / AivisSpeech <code>.zip</code>、Aivis 声线 <code>.aivmx</code>。<br />
         模型、Cubism Core、VOICEVOX、Aivis 都不随应用分发；<br />
         装好后重启应用。详见 docs/ASSETS.md。
       </div>

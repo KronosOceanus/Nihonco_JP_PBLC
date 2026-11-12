@@ -69,9 +69,9 @@
 
 | 分组 | 内容 |
 |---|---|
-| **资源** | Live2D Core、Live2D 模型、ASR、VOICEVOX、AivisSpeech 的下载/状态/路径入口；Windows ASR 含 Whisper 引擎 CUDA/CPU、Whisper 模型下载和已找到/未找到状态；「打开资产目录」显示当前实际写入根 |
+| **资源** | Live2D Core、Live2D 模型、ASR、VOICEVOX、AivisSpeech 的下载/状态/路径入口；Windows ASR 三行：Whisper 引擎（CUDA）、Whisper 引擎（CPU）、Whisper 模型，各自显示已找到/未找到；「打开资产目录」显示当前实际写入根 |
 | **Live2D** | **模型下拉**（自动扫描 `model/` 下的模型）+ 取景三值（倍数 / 左右 / 上下）；「应用」= 临时试看，「保存位置」= 存成该模型默认 |
-| **ASR** | 后端（whisper.cpp / mlx）+ 实际引擎（Windows：CUDA 12.4 / CUDA 11.8 / CPU）+ 模型下拉；实际引擎与引擎行对齐，两个「应用」右对齐；下载入口在资源区；**日志**开关（默认开） |
+| **ASR** | 后端（whisper.cpp / mlx）+ 实际引擎（Windows：CUDA 12.4 / CUDA 11.8 / CPU）+ 模型下拉；实际引擎与引擎行对齐，两个「应用」右对齐；Whisper 引擎/模型下载与拖入安装入口在资源区；**日志**开关（默认开） |
 | **LLM** | 模型下拉（6 家服务商 / 14 个内置模型，Ollama 动态补充，**接口地址自动跟随**）、自定义模型、API key、「测试连通」 |
 | **TTS** | 引擎（VOICEVOX / AivisSpeech）+「应用」；声线（当前引擎角色）+「试听一句」；语速 / 音高 / 语调 / 音量 |
 | **记忆** | 查看/编辑/删除 profile、关系、最近经历；只显示摘要，不显示聊天原文 |

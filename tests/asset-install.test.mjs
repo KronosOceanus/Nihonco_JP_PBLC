@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createRequire } from "node:module";
 
+const require = createRequire(import.meta.url);
+const AdmZip = require("adm-zip");
 const mod = await import("../agent/asset-install.js");
 
 function mk() {
@@ -71,6 +74,24 @@ test("打包 asar：预览 Core 也显示 assetsDir", () => {
   const r = mod.preview({ kind: "core", src: file, root: asarRoot, assetsDir, userData: path.join(root, "userData") });
   assert.equal(r.target, path.join(assetsDir, "lib", "live2dcubismcore.min.js"));
   assert.ok(!r.target.includes("app.asar"));
+});
+
+test("CUDA 包：按内容识别版本，只在 Windows 识别", () => {
+  const { root, src } = mk();
+  const zip = new AdmZip();
+  zip.addFile("Release/whisper-server.exe", Buffer.from("exe"));
+  zip.addFile("Release/ggml-cuda.dll", Buffer.from("gpu"));
+  zip.addFile("Release/cudart64_12.dll", Buffer.from("cuda"));
+  zip.addFile("Release/cublas64_12.dll", Buffer.from("cublas"));
+  const file = path.join(src, "whisper-bin-win-cuda-12.4.0-x64.zip");
+  zip.writeZip(file);
+  assert.deepEqual(mod.cudaInfo(file), { id: "cuda-12.4" });
+  assert.equal(mod.classify(file, "win32"), "cuda");
+  assert.equal(mod.classify(file, "darwin"), "unknown");
+  const p = mod.preview({ src: file, root, asrDir: path.join(root, "asr"), platform: "win32" });
+  assert.equal(p.ok, true);
+  assert.equal(p.kind, "cuda");
+  assert.equal(p.target, path.join(root, "asr", "cuda-12.4"));
 });
 
 test("资源安装：拒绝错误文件类型", () => {

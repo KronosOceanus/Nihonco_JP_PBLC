@@ -270,6 +270,7 @@ settings/index.html #assetDropZone
 live2dcubismcore.min.js  → 当前资产根/lib/
 *.model3.json 的 zip      → 当前资产根/model/<目录名>/
 ggml-*.bin                → 当前 ASR 模型目录（打包 Windows 为 userData/.whisper/models）
+whisper CUDA zip          → userData/asr/cuda-12.4 或 cuda-11.8（按 zip 内 DLL 识别）
 *.aivmx                   → AivisSpeech-Engine/Models/
 vv-engine/run(.exe)       → .voicevox/...（Windows 为 .voicevox/windows/...）
 AivisSpeech-Engine/run(.exe) → .aivis/...

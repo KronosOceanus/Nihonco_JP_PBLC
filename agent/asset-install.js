@@ -148,6 +148,7 @@ function baseNameWithoutZip(file) {
 
 function install({ kind, src, root, assetsDir, userData, whisperModelsDir, app, platform = process.platform }) {
   if (!src) throw new Error("没有文件路径");
+  if (kind === "cuda") throw new Error("CUDA 包请通过识别加速安装流程");
   const actual = classify(src);
   const dirs = bases({ root, assetsDir, userData, whisperModelsDir });
   const expected = kind === "tts" ? (actual === "voicevox" || actual === "aivis" ? "tts" : actual) : actual;
@@ -247,7 +248,20 @@ function install({ kind, src, root, assetsDir, userData, whisperModelsDir, app, 
   return { ok: true, kind, path: dst, backup };
 }
 
-function classify(src) {
+/** Windows CUDA 包：根据 exe/dll 内容识别版本；不是 CUDA 包返回 null */
+function cudaInfo(src) {
+  let names = [];
+  try { names = entries(src).map((e) => String(e.entryName).replace(/\\/g, "/")); } catch (e) { return null; }
+  const hasServer = names.some((n) => /(^|\/)whisper-server\.exe$/i.test(n));
+  const hasGpu = names.some((n) => /(^|\/)ggml-cuda\.dll$/i.test(n));
+  if (!hasServer || !hasGpu) return null;
+  const v12 = names.some((n) => /(^|\/)(cudart64_12|cublas64_12|cublasLt64_12)\.dll$/i.test(n));
+  const v11 = names.some((n) => /(^|\/)(cudart64_11|cublas64_11|cublasLt64_11)\.dll$/i.test(n));
+  if (!v12 && !v11) return null;
+  return { id: v12 ? "cuda-12.4" : "cuda-11.8" };
+}
+
+function classify(src, platform = process.platform) {
   const base = path.basename(src).toLowerCase();
   if (base === "live2dcubismcore.min.js") return "core";
   if (/\.bin$/.test(base)) return "asr";
@@ -255,6 +269,7 @@ function classify(src) {
   if (!/\.zip$/.test(base)) return "unknown";
   let names = [];
   try { names = entries(src).map((e) => String(e.entryName).replace(/\\/g, "/")); } catch (e) { return "unknown"; }
+  if (isWin(platform) && cudaInfo(src)) return "cuda";
   if (names.some((n) => /\.model3\.json$/i.test(n))) return "model";
   if (names.some((n) => /AivisSpeech-Engine\/run(\.exe)?$/.test(n))) return "aivis";
   if (names.some((n) => /\/vv-engine\/run(\.exe)?$/.test(n))) return "voicevox";
@@ -289,10 +304,10 @@ function pick(kind, src, { root, assetsDir, userData, whisperModelsDir, app, pla
   throw new Error("暂不支持这种资源");
 }
 
-function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, app, platform = process.platform }) {
+function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, asrDir, app, platform = process.platform }) {
   const dirs = bases({ root, assetsDir, userData, whisperModelsDir });
   if (!src) throw new Error("没有文件路径");
-  const actual = classify(src);
+  const actual = classify(src, platform);
   const actualKind = actual === "voicevox" || actual === "aivis" ? "tts" : actual;
   if (actual === "unknown") return { ok: false, error: "识别不出资源类型" };
   if (kind && actualKind !== kind) {
@@ -302,6 +317,13 @@ function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, app, 
   kind = actualKind;
   const base = path.basename(src);
   let target;
+  if (actual === "cuda") {
+    assertZipSafe(src);
+    const info = cudaInfo(src);
+    if (!info) throw new Error("CUDA 包内容不完整");
+    const target = path.join(asrDir || path.join(userData || root, "asr"), info.id);
+    return { ok: true, kind: "cuda", cudaId: info.id, label: `识别加速（${info.id.replace("cuda-", "CUDA ")}）`, target, exists: fs.existsSync(target) };
+  }
   if (actual === "core" || actual === "asr" || actual === "aivis-voice") {
     target = pick(actual, src, { root, assetsDir, userData, whisperModelsDir, app });
   } else if (actual === "model") {
@@ -321,4 +343,4 @@ function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, app, 
   return { ok: true, kind, label: LABELS[kind] || kind, target, exists: fs.existsSync(target) };
 }
 
-module.exports = { install, preview, rollback, assetBase };
+module.exports = { install, preview, rollback, assetBase, classify, cudaInfo, assertZipSafe };

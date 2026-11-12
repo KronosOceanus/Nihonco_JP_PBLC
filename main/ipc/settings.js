@@ -9,7 +9,7 @@ module.exports = function registerSettingsIpc({
 
   require('./config')({
     settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
-    app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
+    app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, asrGpu, ensureTtsEngine, restartAsr, stopAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
   });
 
   settingsHandle('cfg:pet-size', () => {

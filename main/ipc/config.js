@@ -1,6 +1,6 @@
 /* 设置项通道：配置 / API key / provider / 模型 / 开机自启 / 资源链接 */
 module.exports = function registerConfigIpc({ settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
-  app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, ensureTtsEngine, restartAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
+  app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, asrGpu, ensureTtsEngine, restartAsr, stopAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
 }) {
   const fs = require('fs');
   const path = require('path');
@@ -8,6 +8,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   const ttsConfig = require('../../agent/tts-config');
   const assetInstall = require('../../agent/asset-install');
   const ASSET_BASE = assetInstall.assetBase({ root: ROOT, assetsDir: ASSET_DIR });
+  const asrDirOf = () => process.env.NIHONCO_ASR_DIR || path.join(app.getPath('userData'), 'asr');
   const changed = (next) => { try { getWin()?.webContents.send('cfg:changed', next); } catch (_) {} };
 
   const enginePath = (id) => (voiceSvc.enginePath ? voiceSvc.enginePath(id) : "");
@@ -206,10 +207,30 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   });
 
   settingsHandle('cfg:preview-asset', (e, { kind, src } = {}) => {
-    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app });
+    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, asrDir: asrDirOf(), app, platform });
   });
 
   settingsHandle('cfg:install-asset', async (e, { kind, src } = {}) => {
+    if (kind === 'cuda') {
+      const info = assetInstall.cudaInfo(src);
+      if (!info) throw new Error('CUDA 包内容不完整');
+      assetInstall.assertZipSafe(src);
+      const asrDir = asrDirOf();
+      let stopped = false;
+      try {
+        await asrGpu.install(asrDir, info.id, {
+          localZip: src,
+          beforeCommit: async () => {
+            stopAsr();
+            stopped = true;
+            await new Promise((r) => setTimeout(r, 600));
+          },
+        });
+        return { ok: true, kind: 'cuda', id: info.id, path: path.join(asrDir, info.id) };
+      } finally {
+        if (stopped) { try { await restartAsr(); } catch (e) {} }
+      }
+    }
     const wasRunning = kind === 'tts' && !!voiceSvc.getEngineProc();
     if (kind === 'tts') voiceSvc.stopEngine();
     let r;
