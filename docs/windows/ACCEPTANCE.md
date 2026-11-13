@@ -2,6 +2,9 @@
 
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 > 安装、平台差异见 [WINDOWS.md](WINDOWS.md)。
+>
+> **本文只放「按顺序的动作 + 判定标准 + 数字基线」**；原理、依赖表、资源路径都在 WINDOWS.md
+> （分工与更新约定见其 §0）。数字基线只在这里维护，WINDOWS 不重复。
 
 ---
 
@@ -37,6 +40,26 @@ v0.7.39
 node -v          # 18+
 npm -v
 Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+```
+
+本次验收环境：Windows 11 x64 / **node v24.22.2** / **npm 11.19.1**。
+
+依赖版本（`package-lock.json` 锁定值，详表与用途见 WINDOWS §2）：
+
+| 依赖 | 版本 |
+|---|---|
+| electron | 45.2.1 |
+| electron-builder | 26.18.0 |
+| @electron/asar | 3.4.1 |
+| kuromoji | 0.1.2 |
+| pixi.js / @pixi/unsafe-eval | 7.4.3 |
+| pixi-live2d-display-lipsyncpatch | 0.5.0-ls-8 |
+| adm-zip | 0.6.1 |
+| @polyglot-bundles/ja-jlpt-syllabi | 0.1.5 |
+| doublearray / zlibjs / async | 0.0.2 / 0.3.1 / 2.6.4 |
+
+```powershell
+node -e "const l=require('./package-lock.json');for(const n of ['electron','electron-builder','kuromoji','pixi.js','adm-zip'])console.log(n.padEnd(18), l.packages['node_modules/'+n].version)"
 ```
 
 ### 下载源
@@ -263,15 +286,14 @@ Test-Path dist\win-unpacked\resources\app.asar.unpacked\.whisper                
 
 ## 9. 已知坑
 
+运行时/使用期的坑统一维护在 [WINDOWS.md](WINDOWS.md) §10（本文不再复制）。
+这里只放**验收本身**的注意点：
+
 ```text
-Ctrl+Alt 可能被输入法/QQ 占用 → 设置里改键
-杀软可能拦 whisper-server.exe / vv-engine\run.exe → 加白名单
-端口 50021 / 8765 只监听本机；防火墙放行
-未签名 exe 会被 SmartScreen 拦 → 更多信息 → 仍要运行
-CUDA 包体积大；峰值磁盘可能约 1.8GB
 首次启动旧数据会被当成“到期”，复习位偏多，正常
 不要用 PowerShell 5.1 改仓库里的中文文件
 VOICEVOX / 模型不随安装包分发，公开分发前确认许可
+构建期的坑（删 dist、electron zip 必下、退出码 1、日志乱码）见 WINDOWS §7 / §11
 ```
 
 ---

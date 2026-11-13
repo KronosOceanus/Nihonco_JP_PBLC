@@ -6,6 +6,28 @@
 
 ---
 
+## 0. 两份文档的分工
+
+`docs/windows/` 下只有两份，职责**不重叠**：
+
+| 文档 | 回答什么 | 什么时候改 |
+|---|---|---|
+| **WINDOWS.md**（本文） | 是什么 / 为什么 / 怎么做：平台差异、依赖版本、资源放哪、构建原理、产物结构、已知问题与环境怪癖 | 架构或平台行为变了就改 |
+| **[ACCEPTANCE.md](ACCEPTANCE.md)** | 这一版能不能发：按顺序的动作、判定标准、硬性数字基线、逐条勾选、回滚 | 每次发版改（尤其数字） |
+
+约定：
+
+```text
+1. 数字只写在 ACCEPTANCE（tests 条数、体积、文件数）；WINDOWS 不写具体数字，
+   需要时写「见 ACCEPTANCE」
+2. ACCEPTANCE 不复制原理，只写动作 + 判定条件，原理链到 WINDOWS 对应小节
+3. 「已知问题」只维护在 WINDOWS §10；ACCEPTANCE 只临时记「本次发版新发现的坑」，
+   发版后并入 WINDOWS 并删掉
+4. 构建步骤只在 WINDOWS §7 写全；ACCEPTANCE §5 只留命令和前置一句
+```
+
+---
+
 ## 1. 结论
 
 Windows 与 mac 共用同一套渲染层和 agent 逻辑，差异集中在：
@@ -22,13 +44,39 @@ TTS：VOICEVOX / AivisSpeech（外部引擎）
 
 ## 2. 环境
 
-| 项 | 要求 |
-|---|---|
-| 系统 | Windows 10/11 x64 |
-| Node | 18+（实测 24 LTS） |
-| Python | 不需要 |
-| 磁盘 | 至少 2GB；Whisper 模型另约 181MB；VOICEVOX 另加约 2GB |
-| 显卡 | 无要求；NVIDIA 可选 CUDA |
+| 项 | 要求 | 本次实测 |
+|---|---|---|
+| 系统 | Windows 10/11 x64 | Windows 11 x64 |
+| Node | 18+ | v24.22.2 |
+| npm | 随 Node | 11.19.1 |
+| Python | 不需要 | — |
+| 磁盘 | 至少 2GB；Whisper 模型另约 181MB；VOICEVOX 另加约 2GB | — |
+| 显卡 | 无要求；NVIDIA 可选 CUDA | RTX 3060 Laptop（驱动 621.01） |
+
+### 依赖版本
+
+`package.json` 写的是范围，`package-lock.json` 锁定的实际版本（v0.7.39）：
+
+| 依赖 | package.json | 锁定 | 用途 |
+|---|---|---|---|
+| electron | `^45.2.1` | **45.2.1** | 运行时（Chromium + Node） |
+| electron-builder | `^26.18.0` | **26.18.0** | 打包 |
+| @electron/asar | 间接依赖 | **3.4.1** | 验收时 `asar list` |
+| kuromoji | `^0.1.2` | **0.1.2** | 振假名 / 读音 |
+| pixi.js | `^7.4.3` | **7.4.3** | Live2D 渲染 |
+| @pixi/unsafe-eval | `^7.4.3` | **7.4.3** | PIXI 补丁 |
+| pixi-live2d-display-lipsyncpatch | `^0.5.0-ls-8` | **0.5.0-ls-8** | Live2D 显示 + 口型 |
+| adm-zip | `^0.6.1` | **0.6.1** | 资源 zip 安装 |
+| @polyglot-bundles/ja-jlpt-syllabi | `^0.1.5` | **0.1.5** | JLPT 数据 |
+| doublearray / zlibjs / async | kuromoji 依赖 | **0.0.2 / 0.3.1 / 2.6.4** | 词典运行时（随 asar 打包） |
+
+`package.json` 的 `engines.node` 是 `>=18`。
+
+核对实际版本（升级依赖后先跑这个，再对照上表）：
+
+```powershell
+node -e "const l=require('./package-lock.json');for(const n of ['electron','electron-builder','kuromoji','pixi.js','adm-zip'])console.log(n.padEnd(18), l.packages['node_modules/'+n].version)"
+```
 
 ### 下载源
 
@@ -334,6 +382,8 @@ Windows lite 不带 .whisper 运行时/模型
 
 ## 9. 验收
 
+这里只列命令；**数字基线（tests 条数 / 体积 / 文件数）与逐条勾选只看 [ACCEPTANCE.md](ACCEPTANCE.md)**（§4 构建前检查、§8 安装后验收）。
+
 ```powershell
 npm test
 npm run scan
@@ -341,11 +391,13 @@ npm run smoke
 npm run smoke:settings
 ```
 
-完整清单见 [ACCEPTANCE.md](ACCEPTANCE.md)。
+`npm run smoke` 是端到端（真的拉起 Electron 切模式），源码模式要先用 `lib\` + `model\Hiyori\`，否则报「渲染层 mode」错——见 §3 末尾。
 
 ---
 
 ## 10. 已知问题
+
+装完用起来才会遇到的坑；构建期的问题在 §11。
 
 ```text
 Ctrl+Alt 可能被输入法/QQ 占用 → 设置里改键
@@ -355,6 +407,7 @@ Ctrl+Alt 可能被输入法/QQ 占用 → 设置里改键
 CUDA 包约 653MB，峰值磁盘约 1.8GB
 高 DPI 125%/150% 未专项验证
 代码签名未做
+首启缺资源：HUD 会提示「缺 Whisper 引擎 / 缺 Whisper 模型」，按 §4 拖入即可
 ```
 
 日志：
