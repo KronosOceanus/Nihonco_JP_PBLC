@@ -1,6 +1,6 @@
 {
   "name": "nihonco-jp",
-  "version": "0.7.38",
+  "version": "0.7.39",
   "description": "Live2D 日语语音对话学习桌宠：本地语音识别 + 云端 LLM + VOICEVOX 小夜声线",
   "main": "main.js",
   "scripts": {
