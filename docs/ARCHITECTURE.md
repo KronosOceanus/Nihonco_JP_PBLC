@@ -383,8 +383,9 @@ Aivis 声线 .aivmx
 平台判断：
 
 ```text
-platform 可能是字符串，也可能是 agent/platform 模块对象
-统一走 platformName()，不能直接 === "win32"
+main 的依赖注入可以用 platform 模块对象
+agent 纯函数参数只接受 process.platform 字符串
+asset-install 会直接拒绝对象，不能靠 === "win32" 静默兜底
 ```
 
 安全：
@@ -487,7 +488,7 @@ npm run check:assets:lite
 
 ### 已修复，仍需保持
 
-**平台对象误传**：`platform` 既可能是 `"win32"` 字符串，也可能是 `agent/platform` 模块对象。`asset-install` 已统一走 `platformName()`；新增跨层参数时不要直接 `=== "win32"`。
+**平台参数契约**：`main` 的依赖注入可以用 `agent/platform` 模块对象；`agent` 纯函数参数只接受 `process.platform` 字符串。`asset-install` 现在会直接拒绝对象参数，新增跨层调用不要把模块对象传进纯函数。
 
 ---
 

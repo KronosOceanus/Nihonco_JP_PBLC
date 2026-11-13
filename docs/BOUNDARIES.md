@@ -205,9 +205,9 @@ Windows 真机验证仍靠手工
 已修复但需保持：
 
 ```text
-platform 可能是字符串或模块对象
-  统一走 platformName()
-  不要直接 === "win32"
+main 的依赖注入可以用 platform 模块对象
+agent 纯函数参数只接受 process.platform 字符串
+asset-install 会拒绝对象参数
 ```
 
 技术债不单独维护清单；有证据的才修，其余记录在 NOTES / CHANGELOG。

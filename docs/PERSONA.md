@@ -410,7 +410,7 @@ episodes 按关键词 + 新近度选 2–3 条
 ```text
 1. persona.block()
 2. 模式规则 modeRules(mode)
-3. slang.promptBlock()（仅会話）
+3. slang.promptBlock(userText)（仅会話；只注入本轮命中的词，未命中只保留假名提示）
 4. JSON 契约
 5. 模式 system 补丁（如「本轮不出黄卡」）
 6. persona-scenes 选中的例子

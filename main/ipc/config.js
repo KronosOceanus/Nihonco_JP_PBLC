@@ -207,7 +207,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   });
 
   settingsHandle('cfg:preview-asset', (e, { kind, src } = {}) => {
-    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, asrDir: asrDirOf(), app, platform });
+    return assetInstall.preview({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, asrDir: asrDirOf(), app, platform: process.platform });
   });
 
   settingsHandle('cfg:install-asset', async (e, { kind, src } = {}) => {
@@ -249,7 +249,7 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     if (kind === 'tts') voiceSvc.stopEngine();
     let r;
     try {
-      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app, platform });
+      r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app, platform: process.platform });
     } finally {
       if (wasRunning) voiceSvc.startTtsEngine();
     }

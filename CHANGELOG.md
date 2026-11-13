@@ -1,5 +1,26 @@
 # 更新日志
 
+## v0.7.34 — 动态网络用语提示
+
+### 对话
+
+- slang 改为按本轮用户输入动态注入
+- 未命中网络用语时只保留假名输入提示，不再发送整张词表
+
+## v0.7.33 — 平台参数契约与文档收敛
+
+### 修复
+
+- `asset-install` 的 platform 参数收紧为 `process.platform` 字符串
+- 删除 platformName 兼容层，传模块对象直接报错
+- Windows 资源预览统一传字符串，修正 CUDA/CPU 与 TTS 目标路径
+
+### 文档
+
+- 重构 ARCHITECTURE / ASSETS / AUDIO / DATA / PERSONA / UI / JAPANESE-RULES / DEV / BOUNDARIES
+- 重构 Windows 安装与验收
+- 删除重复的 INSTALL，更新文档地图
+
 ## v0.7.32 — 修复 CPU 引擎状态字段
 
 ### 设置

@@ -556,7 +556,7 @@ async function chat(history, userText, mode = "conv", source = "text") {
     mem.load();
     memText = mem.context(userText);
   } catch (e) { /* 记忆坏了不影响聊天 */ }
-  const sys = systemPrompt(mode, CONF.level)
+  const sys = systemPrompt(mode, CONF.level, userText)
     + (memText ? "\n\n" + memText : "")
     + (vocabTargets.length ? "\n\n" + targets.block(vocabTargets) : "");
   const msgs = [{ role: "system", content: sys }];

@@ -65,14 +65,11 @@ function extractZip(zip, dest) {
   }
 }
 
-/** platform 可能是 "win32" 字符串，也可能是 agent/platform 模块对象 */
-function platformName(platform) {
-  if (typeof platform === "string") return platform;
-  if (platform && platform.IS_WIN) return "win32";
-  if (platform && platform.IS_MAC) return "darwin";
-  return process.platform;
+/** 纯函数参数只接受 process.platform 字符串；模块对象只在 main 层使用 */
+function isWin(platform) {
+  if (typeof platform !== "string") throw new TypeError("platform 必须是 process.platform 字符串");
+  return platform === "win32";
 }
-function isWin(platform) { return platformName(platform) === "win32"; }
 
 /** 当前可写资产根：开发/full = root，打包 asar = assetsDir */
 function assetBase({ root, assetsDir }) {
@@ -315,6 +312,7 @@ function installWhisperCpu({ src, asrDir }) {
 }
 
 function classify(src, platform = process.platform) {
+  if (typeof platform !== "string") throw new TypeError("platform 必须是 process.platform 字符串");
   const base = path.basename(src).toLowerCase();
   if (base === "live2dcubismcore.min.js") return "core";
   if (/\.bin$/.test(base)) return "asr";
@@ -403,4 +401,4 @@ function preview({ kind, src, root, assetsDir, userData, whisperModelsDir, asrDi
   return { ok: true, kind, label: LABELS[kind] || kind, target, exists: fs.existsSync(target) };
 }
 
-module.exports = { install, installWhisperCpu, preview, rollback, assetBase, classify, cudaInfo, cpuInfo, assertZipSafe, platformName };
+module.exports = { install, installWhisperCpu, preview, rollback, assetBase, classify, cudaInfo, cpuInfo, assertZipSafe };

@@ -79,7 +79,7 @@ const TEACH_RULES = `【解説モード】
  * @param {"conv"|"teach"} mode
  * @param {string} level N5~N1
  */
-function systemPrompt(mode, level = "N4") {
+function systemPrompt(mode, level = "N4", userText = "") {
   if (mode !== "conv" && mode !== "teach") {
     throw new Error(`unknown prompt mode: ${mode}`);
   }
@@ -99,7 +99,7 @@ ${JSON_CONTRACT}`;
 
 ${CONV_RULES}
 
-${slang.promptBlock()}
+${slang.promptBlock(userText)}
 
 ${JSON_CONTRACT}`;
 }
