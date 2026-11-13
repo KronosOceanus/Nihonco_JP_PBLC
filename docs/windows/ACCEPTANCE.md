@@ -114,10 +114,16 @@ skipped 数随本机资产变：`.whisper` 里有模型 / whisper-server 在跑�
 
 ## 5. 构建
 
+先清干净再构建（`win-unpacked` 会被复用，旧版本残留会让 §6 误判）：
+
 ```powershell
+Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
+
 npm run build:win:lite:dir   # dist\win-unpacked\Nihonco.exe
 npm run build:win:lite       # NSIS + portable
 ```
+
+PowerShell 拦 `npm.ps1` 时前面加 `cmd /c`。
 
 `build:win` / `build:win:dir` 是 lite 别名。
 
@@ -128,6 +134,16 @@ node_modules\electron\dist 缺失时构建脚本会自动补（镜像 → 官方
 首次构建下 winCodeSign-2.6.0 / nsis-3.0.4.1 / nsis-resources-3.4.1（几 MB，之后走缓存）
 不下载 whisper，也不打包 .whisper
 ```
+
+即使本地已有 `node_modules\electron\dist`，electron-builder 通常仍会下载一次 electron zip；
+断网会 `connect ETIMEDOUT`，而脚本只抛「node.exe 退出码 1」——要看完整日志。
+离线构建用：
+
+```powershell
+node node_modules\electron-builder\cli.js --win --x64 --dir -c.electronDist=node_modules/electron/dist
+```
+
+体积基线（v0.7.39 实测）：`win-unpacked` **429.3 MB / 82 个文件**，打成 zip 约 170 MB。
 
 ---
 
@@ -147,7 +163,16 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr persona
 npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.json
 ```
 
-后两条不应出现。
+`findstr persona` 会命中 `agent\persona.js` / `agent\persona-scenes.js` 两个代码文件（正常）；
+要查的是 `findstr data\\persona`（应为空）。
+`findstr wordbook` 同理——会命中 `agent\wordbook.js`，数据文件是 `wordbook.json`。
+
+再确认 v0.7.37 起不再内置 Whisper：
+
+```powershell
+npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr whisper-server   # 空
+Test-Path dist\win-unpacked\resources\app.asar.unpacked\.whisper                        # False
+```
 
 ---
 

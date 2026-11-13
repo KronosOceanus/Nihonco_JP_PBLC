@@ -244,6 +244,11 @@ AivisSpeech 首次启动下载 BERT（约 1GB+），设置页显示阶段。
 ## 7. 构建
 
 ```powershell
+# 构建前先删 dist：electron-builder 会复用 win-unpacked，
+# 旧版本 app.asar.unpacked 里的残留（例如 ≤0.7.36 的 .whisper）
+# 会让「包里没有 .whisper」这条验收误判失败
+Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
+
 npm run check:assets:lite
 npm test
 npm run scan
@@ -252,6 +257,12 @@ npm run build:win:lite:dir    # dist\win-unpacked\Nihonco.exe
 npm run build:win:lite        # NSIS + portable
 npm run build:win:lite:nsis
 npm run build:win:lite:portable
+```
+
+PowerShell 里 `npm.ps1` 常被执行策略拦；跑不通就统一加壳：
+
+```powershell
+cmd /c "npm run build:win:lite:dir"
 ```
 
 Windows lite 不再执行 `setup-whisper`：不下载模型，也不打包 `.whisper`。  
@@ -265,6 +276,15 @@ node_modules\electron\dist 必须存在；缺了构建脚本会自己用镜像�
 
 首次构建还会下 `winCodeSign-2.6.0` / `nsis-3.0.4.1` / `nsis-resources-3.4.1`（几 MB，缓存在 `%LOCALAPPDATA%\electron-builder\Cache`），之后不再下载。下载失败会自动换下一个源重试整次构建。
 
+注意：**即使 `node_modules\electron\dist` 已经存在，electron-builder 通常仍会下载一次 electron zip**
+（日志：`• downloaded label=electron progress=100% … output=dist\win-unpacked`）。
+所以真·离线构建要显式指定本地二进制，否则断网会在 packaging 阶段 `connect ETIMEDOUT` 失败，
+而 `build-app.mjs` 只会抛出「`node.exe` 退出码 1」，看不出原因——必须翻完整日志：
+
+```powershell
+node node_modules\electron-builder\cli.js --win --x64 --dir -c.electronDist=node_modules/electron/dist
+```
+
 别名：
 
 ```text
@@ -272,12 +292,13 @@ build:win  = build:win:lite
 build:win:dir = build:win:lite:dir
 ```
 
-产物：
+产物（v0.7.39 实测）：
 
 ```text
 Nihonco-<版本>-lite-setup.exe
 Nihonco-<版本>-lite-portable.exe
-win-unpacked/
+win-unpacked/                429.3 MB / 82 个文件
+win-unpacked 打成 zip        约 170 MB（7z -mx=5）
 ```
 
 ---
@@ -352,6 +373,9 @@ CUDA 包约 653MB，峰值磁盘约 1.8GB
 | `ELECTRON_RUN_AS_NODE=1` | 启动打包版前清掉 |
 | `npm ci` 说成功，但 `node_modules\electron\dist` 不存在 | postinstall 静默失败；构建脚本会用镜像自动补，也可手动 `node node_modules\electron\install.js` |
 | Electron / builder 二进制下载慢或失败 | 构建脚本自动「镜像 → 官方」换源；要强制就用 `--mirror=cn` / `--mirror=official` |
+| `npm run build:win:lite:dir` 只报 `node.exe 退出码 1` | 真正原因在完整日志里（常见 `connect ETIMEDOUT`）；把输出重定向到文件再查，别只看尾部 |
+| 构建产物里混着旧版本的 `.whisper` / `assets` | 构建前没删 `dist`，`win-unpacked` 被复用；先 `Remove-Item dist -Recurse -Force` |
+| 终端里 `•` / `✓` 变成 `鈥?` / `鉁?` | PowerShell 5.1 按 ANSI 解 electron-builder 的 UTF-8 输出；不影响构建，但 grep 会漏，改用 `Get-Content <log> -Encoding UTF8` |
 | PowerShell 执行策略禁 npm.ps1 | `cmd /c npm ...` 或 `node ...` |
 | PowerShell 5.1 改中文文件变乱码 | 用编辑器，不要 `Set-Content` |
 | 旧版应用在跑导致 EPERM | 先停进程，或输出到临时目录 |
