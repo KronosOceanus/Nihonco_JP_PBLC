@@ -1,4 +1,4 @@
-# Windows 构建与验收清单（v0.7.36）
+# Windows 构建与验收清单（v0.7.38）
 
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 > 安装、平台差异见 [WINDOWS.md](WINDOWS.md)。
@@ -26,7 +26,7 @@ git log --oneline -3
 确认：
 
 ```text
-v0.7.36
+v0.7.38
 ```
 
 ---
@@ -66,11 +66,13 @@ Copy-Item .env.example .env
 
 准备方式与路径见 [WINDOWS.md](WINDOWS.md) §4 和 [ASSETS.md](../ASSETS.md) §5。
 
-验收时确认：
+v0.7.37 起 Windows lite **不内置** Whisper 运行时和模型，验收前先自己放好：
 
-- [ ] Windows 默认 CPU 运行时和 `ggml-small-q5_1.bin` 存在
-- [ ] 可选 CUDA 12.4 / 11.8 已安装或可拖入安装
-- [ ] 用户 CPU 运行时在 `%APPDATA%\Nihonco\asr\cpu` 时优先生效
+- [ ] 安装包 / `win-unpacked` 里没有 `.whisper` 目录
+- [ ] CPU 引擎 zip 拖入 → `%APPDATA%\Nihonco\asr\cpu`（有 `whisper-server.exe` + dll）
+- [ ] CUDA 引擎 zip（可选）拖入 → `%APPDATA%\Nihonco\asr\cuda-12.4` / `cuda-11.8`
+- [ ] 模型 `ggml-*.bin` 拖入 → `%APPDATA%\Nihonco\.whisper\models`
+- [ ] 只装引擎不装模型时 ASR 不可用，补模型后自动可用
 - [ ] TTS 已安装 VOICEVOX 或 AivisSpeech 之一
 
 ## 4. 构建前检查
@@ -86,9 +88,10 @@ npm run smoke
 当前基线：
 
 ```text
-npm test  → 340（338 pass，2 skipped）
-scan      → 全绿
-smoke     → 6 步
+npm test       → 344（341 pass，3 skipped）
+scan           → 全绿
+smoke          → 6 步
+smoke:settings → 通过
 ```
 
 ---
@@ -145,6 +148,7 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.
 - [ ] 等级只接受 N5–N1
 - [ ] 旧数据里的 `27岁` 不显示为等级
 - [ ] 称呼读音为平假名，TTS 朗读昵称时使用读音
+- [ ] 首次启动（引擎和模型都没装）HUD 提示「缺 Whisper 引擎 / 设置 → 资源」
 
 ### 资源与 Live2D
 

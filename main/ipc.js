@@ -65,7 +65,7 @@ module.exports = function createIpc(ctx) {
   require('./ipc/pet')({
     petHandle, petOn, app, agent, tts, voiceCache, asrSvc, voiceSvc, asrLog, platform,
     ensureAsr, restartAsr, speakToWav, getWin, getLevelIdle, getAlwaysOnTop, menus, setPassThrough,
-    openSettings, petResize, petResizeEnd, VOICE_DIR,
+    openSettings, petResize, petResizeEnd, VOICE_DIR, asrBackends, ROOT,
   });
 
   app.on('activate', () => {

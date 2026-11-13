@@ -1,5 +1,20 @@
 # 更新日志
 
+## 未发布
+
+### 修复
+
+- Windows lite 首次启动缺 Whisper 引擎/模型时，HUD 直接提示去「设置 → 资源」拖入，不再只报「语音识别没起来」
+- 设置 → ASR 的 Windows 提示改成拖入引擎 zip + `ggml-*.bin`（原来让人跑 `npm run setup:whisper`，打包版跑不了）
+- 验收清单 §3 不再要求「默认自带 CPU 运行时和模型」，补「包里没有 `.whisper`」「只装引擎不可用」检查项
+- 测试基线更新为 344 项；`check:assets:lite` 提示补上 Whisper
+
+### 文档
+
+- 清掉「GPU 版共用内置 `.whisper/models`」「内置目录兜底」等 v0.7.37 后失效的说法
+
+---
+
 ## v0.7.37 — Windows lite 不再内置 Whisper
 
 ### 构建

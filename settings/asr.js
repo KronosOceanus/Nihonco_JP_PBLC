@@ -15,7 +15,7 @@ function setAsrHint(opt) {
   const el = $("asrHint");
   if (!el || !opt) return;
   el.innerHTML = opt.isWin
-    ? 'whisper.cpp：拖入 <code>ggml-*.bin</code>，或先跑 <code>npm run setup:whisper</code>'
+    ? 'whisper.cpp：拖入 CPU/CUDA 引擎 zip 和 <code>ggml-*.bin</code>（或跑 <code>npm run setup:whisper</code>）'
     : 'whisper.cpp 默认；mlx 模型先跑 <code>npm run setup:mlx</code>';
 }
 
@@ -25,7 +25,7 @@ function setAsrDetail(opt) {
   const esc = (v) => String(v || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   if (opt.isWin) {
     el.innerHTML = `后端 <code>whisper.cpp</code> 需要 <code>${esc(opt.whisperHome)}</code> 里的 whisper-server；<br>` +
-      `用户模型来自 <code>${esc(opt.whisperModelsDir)}</code>，内置目录兜底；切换后自动重启识别服务。`;
+      `用户模型来自 <code>${esc(opt.whisperModelsDir)}</code>；切换后自动重启识别服务。`;
   } else {
     el.innerHTML = `后端 <code>whisper.cpp</code> 需要 <code>.whisper/whisper-server</code>；<code>mlx</code> 需要 ` +
       `<code>.venv</code>（Python），切换后自动重启识别服务。<br>` +

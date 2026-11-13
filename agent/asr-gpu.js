@@ -6,7 +6,7 @@
  * 目录约定（与 agent/asr-whispercpp.js 一致）：
  *   <asrDir>/active.json        {"backend":"cuda-12.4"}
  *   <asrDir>/cuda-12.4/         whisper-server.exe + 全部 dll（约 1.1 GB）
- *   模型不复制：GPU 版共用内置 .whisper/models 里的 .bin
+ *   模型不复制：GPU 版共用用户模型目录（userData/.whisper/models）里的 .bin
  *
  * 安装流程：探测 GPU → 下载 zip（可续传/可取消）→ bsdtar 解压 → 只拷必需文件 → 写 active.json
  * 任何一步失败都不破坏现有可用状态（CPU 版还在）。

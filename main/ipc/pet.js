@@ -6,7 +6,7 @@ const langGuard = require("../../agent/lang-guard");
 module.exports = function registerPetIpc({
   petHandle, petOn, app, agent, tts, voiceCache, asrSvc, voiceSvc, asrLog, platform,
   ensureAsr, restartAsr, speakToWav, getWin, getLevelIdle, getAlwaysOnTop, menus, setPassThrough,
-  openSettings, petResize, petResizeEnd, VOICE_DIR,
+  openSettings, petResize, petResizeEnd, VOICE_DIR, asrBackends, ROOT,
 }) {
   // 学习水平：读取/切换（持久化到 data/settings.json）
   petHandle('pet:level', ({ action, level } = {}) => {
@@ -316,6 +316,16 @@ module.exports = function registerPetIpc({
   //   · 文件在但还没响应 → 等它起来，最多等引擎就绪（ensureTtsEngine）
   petHandle('pet:tts-health', async () => {
     return voiceSvc.bootCheckTts({ timeoutMs: 12000 });
+  });
+
+  // 缺哪些 Whisper 资产（Windows lite 不内置）：首启 HUD 用它给出「去哪拖」的提示
+  petHandle('pet:asr-assets', () => {
+    try {
+      const info = asrBackends.info(ROOT);
+      return { missing: info.wcpp ? null : (info.wcppBin ? 'model' : 'engine'), isWin: !!info.isWin };
+    } catch (e) {
+      return { missing: null, isWin: false };
+    }
   });
 
   // 语音识别启动自检：只有「确定起不来」才 status=failed；加载中返回 loading

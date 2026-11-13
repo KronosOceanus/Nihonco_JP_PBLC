@@ -61,9 +61,9 @@ ASR GPU 安装 / CUDA 与 CPU 包识别
 当前基线：
 
 ```text
-340 tests
-338 pass
-2 skipped（运行时 ASR 契约，服务没跑）
+344 tests
+341 pass
+3 skipped（运行时 ASR 契约，服务没跑）
 ```
 
 ### 不测

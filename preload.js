@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('pet', {
   // 语音识别：传 base64 的 wav，拿回 { text, ms }
   asr: (wavBase64, lang) => ipcRenderer.invoke('pet:asr', { wavBase64, lang }),
   asrHealth: () => ipcRenderer.invoke('pet:asr-health'),
+  // 缺哪些 Whisper 资产（engine / model），首启 HUD 用
+  asrAssets: () => ipcRenderer.invoke('pet:asr-assets'),
   lookup: (text) => ipcRenderer.invoke('pet:lookup', text),
   // 语音合成是否可用（Windows 缺 VOICEVOX 时 ok=false，界面据此提示）
   ttsHealth: () => ipcRenderer.invoke('pet:tts-health'),

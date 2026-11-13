@@ -39,6 +39,8 @@ function queueHint(text, ms = 6000) {
 async function checkServicesOnBoot() {
   const ttsP = window.pet.ttsHealth ? window.pet.ttsHealth().catch(() => null) : Promise.resolve(null);
   const asrP = window.pet.asrHealth ? window.pet.asrHealth().catch(() => null) : Promise.resolve(null);
+  // 资产检查不等探测：Windows lite 不内置 Whisper，缺引擎/模型时直接说去哪拖
+  const assetsP = window.pet.asrAssets ? window.pet.asrAssets().catch(() => null) : Promise.resolve(null);
 
   const h = await ttsP;
   if (h) {
@@ -46,6 +48,17 @@ async function checkServicesOnBoot() {
       console.log("[tts] 启动自检不可用:", h.reason, `(等了 ${h.waitedMs || 0}ms)`);
       queueHint("缺日语语音引擎\n（VOICEVOX / Aivis）\n暂时没法出声");
     }
+  }
+
+  const assets = await assetsP;
+  if (assets && assets.missing) {
+    console.log("[asr] 缺资产:", assets.missing);
+    if (assets.missing === "engine") {
+      queueHint(assets.isWin ? "缺 Whisper 引擎\n设置 → 资源\n拖入 CPU 引擎 zip" : "缺 Whisper 运行时\n先跑 npm run setup:whisper", 9000);
+    } else {
+      queueHint(assets.isWin ? "缺 Whisper 模型\n设置 → 资源\n拖入 ggml-*.bin" : "缺 Whisper 模型\n先跑 npm run setup:whisper", 9000);
+    }
+    return;
   }
 
   const a = await asrP;
