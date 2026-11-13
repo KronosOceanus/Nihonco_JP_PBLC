@@ -1,5 +1,13 @@
 # 更新日志
 
+## v0.7.37 — Windows lite 不再内置 Whisper
+
+### 构建
+
+- Windows lite 不再内置 Whisper 运行时和模型；首次启动后从设置 → 资源拖入 CPU/CUDA 引擎和 `ggml-*.bin`
+- Windows 构建不再下载/检查 `.whisper`，安装包不再包含 `whisper-server.exe`、DLL 和模型
+- mac 构建保持不变，仍由 `setup-whisper` 准备 Metal 版运行时
+
 ## v0.7.36 — 始终置顶开关
 
 ### 功能
