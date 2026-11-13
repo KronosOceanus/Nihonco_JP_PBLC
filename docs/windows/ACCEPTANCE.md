@@ -2,6 +2,9 @@
 
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 > 安装、平台差异见 [WINDOWS.md](WINDOWS.md)。
+>
+> **本文只放「按顺序的动作 + 判定标准 + 数字基线」**；原理、依赖表、资源路径都在 WINDOWS.md
+> （分工与更新约定见其 §0）。数字基线只在这里维护，WINDOWS 不重复。
 
 ---
 
@@ -37,6 +40,14 @@ v0.7.39
 node -v          # 18+
 npm -v
 Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+```
+
+本次验收环境：Windows 11 x64 / **node v24.22.2** / **npm 11.19.1**。
+
+依赖版本表见 [WINDOWS.md](WINDOWS.md) §2（本文不复制）。核对实际锁定值：
+
+```powershell
+node -e "const l=require('./package-lock.json');for(const n of ['electron','electron-builder','kuromoji','pixi.js','adm-zip'])console.log(n.padEnd(18), l.packages['node_modules/'+n].version)"
 ```
 
 ### 下载源
@@ -114,10 +125,16 @@ skipped 数随本机资产变：`.whisper` 里有模型 / whisper-server 在跑�
 
 ## 5. 构建
 
+先清干净再构建（清 `dist` 只为排除干扰；实测 electron-builder 会重建 `app.asar.unpacked`）：
+
 ```powershell
+Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
+
 npm run build:win:lite:dir   # dist\win-unpacked\Nihonco.exe
 npm run build:win:lite       # NSIS + portable
 ```
+
+PowerShell 拦 `npm.ps1` 时前面加 `cmd /c`。
 
 `build:win` / `build:win:dir` 是 lite 别名。
 
@@ -128,6 +145,19 @@ node_modules\electron\dist 缺失时构建脚本会自动补（镜像 → 官方
 首次构建下 winCodeSign-2.6.0 / nsis-3.0.4.1 / nsis-resources-3.4.1（几 MB，之后走缓存）
 不下载 whisper，也不打包 .whisper
 ```
+
+electron-builder 用的是它自己那份 electron zip，和 `node_modules\electron\dist` 无关：
+首次构建会额外下约 158MB，之后缓存命中就不再联网。日志里的 `• downloaded label=electron`
+在缓存命中时也照打，别当成"每次都在下载"。
+
+断网且没缓存时会在 packaging 阶段 `connect ETIMEDOUT`，脚本只抛「node.exe 退出码 1」——要看完整日志。
+离线构建用：
+
+```powershell
+node node_modules\electron-builder\cli.js --win --x64 --dir -c.electronDist=node_modules/electron/dist
+```
+
+体积基线（v0.7.39 实测）：`win-unpacked` **429.3 MB / 82 个文件**，打成 zip 约 170 MB。
 
 ---
 
@@ -147,7 +177,16 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr persona
 npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.json
 ```
 
-后两条不应出现。
+`findstr persona` 会命中 `agent\persona.js` / `agent\persona-scenes.js` 两个代码文件（正常）；
+要查的是 `findstr data\\persona`（应为空）。
+`findstr wordbook` 同理——会命中 `agent\wordbook.js`，数据文件是 `wordbook.json`。
+
+再确认 v0.7.37 起不再内置 Whisper：
+
+```powershell
+npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr whisper-server   # 空
+Test-Path dist\win-unpacked\resources\app.asar.unpacked\.whisper                        # False
+```
 
 ---
 
@@ -238,15 +277,14 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.
 
 ## 9. 已知坑
 
+运行时/使用期的坑统一维护在 [WINDOWS.md](WINDOWS.md) §10（本文不再复制）。
+这里只放**验收本身**的注意点：
+
 ```text
-Ctrl+Alt 可能被输入法/QQ 占用 → 设置里改键
-杀软可能拦 whisper-server.exe / vv-engine\run.exe → 加白名单
-端口 50021 / 8765 只监听本机；防火墙放行
-未签名 exe 会被 SmartScreen 拦 → 更多信息 → 仍要运行
-CUDA 包体积大；峰值磁盘可能约 1.8GB
 首次启动旧数据会被当成“到期”，复习位偏多，正常
 不要用 PowerShell 5.1 改仓库里的中文文件
 VOICEVOX / 模型不随安装包分发，公开分发前确认许可
+构建期的坑（删 dist、electron zip 必下、退出码 1、日志乱码）见 WINDOWS §7 / §11
 ```
 
 ---
