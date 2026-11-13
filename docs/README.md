@@ -20,6 +20,12 @@
 | [windows/WINDOWS.md](windows/WINDOWS.md) | Windows 安装、ASR CPU/CUDA、TTS、lite 构建、打包结构 |
 | [windows/ACCEPTANCE.md](windows/ACCEPTANCE.md) | Windows 构建与安装后验收清单 |
 
+## macOS
+
+| 文档 | 负责 |
+|---|---|
+| [mac/BUILD.md](mac/BUILD.md) | mac 构建前置、步骤、产物是壳、分发与自检 |
+
 ## 开发 / 维护
 
 | 文档 | 负责 |
@@ -40,6 +46,7 @@
 ASR/TTS 运行时 / 回退 / 超时  → AUDIO.md
 Windows 安装 / 打包          → windows/WINDOWS.md
 Windows 验收                 → windows/ACCEPTANCE.md
+macOS 构建 / 分发            → mac/BUILD.md
 判分 / SRS / 对话规则        → JAPANESE-RULES.md
 人设 / 记忆设计              → PERSONA.md
 数据文件 / schema / 备份     → DATA.md

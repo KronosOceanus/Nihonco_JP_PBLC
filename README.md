@@ -94,6 +94,9 @@ npm run build:app:lite        # ASR + 应用本体，不含 Live2D
 npm run build:app:lite:mlx    # lite + mlx 环境/模型
 ```
 
+首次构建会编 whisper.cpp 并下模型（源码 9.8MB + 模型 181MB，默认镜像优先）。
+完整步骤、产物结构、怎么发给别人、自检清单见 [docs/mac/BUILD.md](docs/mac/BUILD.md)。
+
 Windows：
 
 ```bash
