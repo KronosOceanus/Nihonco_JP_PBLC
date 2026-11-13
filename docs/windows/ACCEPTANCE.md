@@ -46,6 +46,9 @@ $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
 $env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-builder-binaries/'
 ```
 
+换源不是回退：没设就是 GitHub，失败不会自动切镜像。npm 包另加
+`--registry https://registry.npmmirror.com`。
+
 ---
 
 ## 2. 依赖与配置
@@ -53,6 +56,13 @@ $env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-
 ```powershell
 npm ci
 npm run setup
+```
+
+确认 Electron 二进制落地（`npm ci` 可能静默跳过下载，npm 不报错）：
+
+```powershell
+Test-Path node_modules\electron\dist\electron.exe   # 应为 True
+node node_modules\electron\install.js               # 缺了再跑这条
 ```
 
 ```powershell
@@ -94,6 +104,9 @@ smoke          → 6 步
 smoke:settings → 通过
 ```
 
+skipped 数随本机资产变：`.whisper` 里有模型 / whisper-server 在跑时，
+运行时 ASR 契约那几条会真的执行（341→342→343 pass）。不是回归。
+
 ---
 
 ## 5. 构建
@@ -104,6 +117,14 @@ npm run build:win:lite       # NSIS + portable
 ```
 
 `build:win` / `build:win:dir` 是 lite 别名。
+
+前置与首次开销：
+
+```text
+node_modules\electron\dist 必须存在（缺了 node node_modules\electron\install.js）
+首次构建下 winCodeSign-2.6.0 / nsis-3.0.4.1 / nsis-resources-3.4.1（几 MB，之后走缓存）
+不下载 whisper，也不打包 .whisper
+```
 
 ---
 
@@ -239,10 +260,13 @@ VOICEVOX / 模型不随安装包分发，公开分发前确认许可
 ## 11. 回滚
 
 ```powershell
-git checkout v0.7.31
+git checkout v0.7.37          # 上一个发布版本
 npm ci
 npm run build:win:lite:dir
 ```
+
+注意：v0.7.37 之前装过旧版的话，旧包里 `.whisper` 是随包的；回滚后
+`%APPDATA%\Nihonco` 里用户自己拖入的引擎/模型不会被删，可以继续用。
 
 不要提交：
 

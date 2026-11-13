@@ -1,6 +1,6 @@
 # Windows 安装与打包
 
-> 当前版本：**v0.7.36**
+> 当前版本：**v0.7.38**
 >
 > 本项目只提供 **lite** 构建。构建/验收清单见 [ACCEPTANCE.md](ACCEPTANCE.md)。
 
@@ -37,6 +37,9 @@ $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
 $env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-builder-binaries/'
 ```
 
+这两个变量是**换源**，不是回退：设了就用镜像，没设就只走 GitHub，失败也不会自动切。
+npm 包另需 `--registry https://registry.npmmirror.com`（或写进 `.npmrc`）。
+
 ---
 
 ## 3. 安装
@@ -52,6 +55,18 @@ npm start
 
 源码模式要语音识别，按第 4 节准备 Whisper 引擎和模型；只打包不需要。  
 Windows lite 安装包本身**不含** Whisper 运行时和模型。
+
+`npm ci` 之后要确认 Electron 二进制真的落地了——它可能**静默失败**，npm 不报错：
+
+```powershell
+Test-Path node_modules\electron\dist\electron.exe    # 应为 True
+```
+
+缺了就手动补（设了 `ELECTRON_MIRROR` 才快）：
+
+```powershell
+node node_modules\electron\install.js
+```
 
 ---
 
@@ -228,6 +243,14 @@ npm run build:win:lite:portable
 Windows lite 不再执行 `setup-whisper`：不下载模型，也不打包 `.whisper`。  
 首次启动后从设置 → 资源拖入引擎和模型。
 
+前置：
+
+```text
+node_modules\electron\dist 必须存在（缺了跑 node node_modules\electron\install.js）
+```
+
+首次构建还会下 `winCodeSign-2.6.0` / `nsis-3.0.4.1` / `nsis-resources-3.4.1`（几 MB，缓存在 `%LOCALAPPDATA%\electron-builder\Cache`），之后不再下载。
+
 别名：
 
 ```text
@@ -313,6 +336,8 @@ CUDA 包约 653MB，峰值磁盘约 1.8GB
 | 现象 | 处理 |
 |---|---|
 | `ELECTRON_RUN_AS_NODE=1` | 启动打包版前清掉 |
+| `npm ci` 说成功，但 `node_modules\electron\dist` 不存在 | Electron 的 postinstall 静默失败；`node node_modules\electron\install.js` |
+| Electron / builder 二进制下载卡住 | 设 `ELECTRON_MIRROR` / `ELECTRON_BUILDER_BINARIES_MIRROR`；这两个变量没有自动回退 |
 | PowerShell 执行策略禁 npm.ps1 | `cmd /c npm ...` 或 `node ...` |
 | PowerShell 5.1 改中文文件变乱码 | 用编辑器，不要 `Set-Content` |
 | 旧版应用在跑导致 EPERM | 先停进程，或输出到临时目录 |
