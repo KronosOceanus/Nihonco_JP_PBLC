@@ -14,6 +14,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { mirrorOrder, parseMirrorMode, ELECTRON_MIRROR_CN, BUILDER_MIRROR_CN } from "./fetch.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -30,6 +31,9 @@ const format = get("format", "");
 const withMlx = has("with-mlx");
 const isMac = target === "mac";
 const isWin = target === "win";
+// 下载源顺序：auto = 镜像优先、官方兜底（--mirror=auto|cn|official）
+const mirror = parseMirrorMode(args);
+const order = mirrorOrder(mirror);
 
 if (!["mac", "win"].includes(target)) throw new Error("--target 只能是 mac 或 win");
 
@@ -57,8 +61,45 @@ function ensureMlx() {
 
 function checkNode() {
   if (!exists("node_modules/electron")) throw new Error("没有 node_modules/electron：先 npm ci");
-  if (!exists("node_modules/electron/dist")) throw new Error("Electron 二进制没下载：node node_modules/electron/install.js");
   if (!exists("node_modules/electron-builder/cli.js")) throw new Error("没有 electron-builder：先 npm ci");
+}
+
+/** Electron 二进制没下下来时自己补：npm ci 的 postinstall 可能静默失败 */
+function ensureElectron() {
+  if (exists("node_modules/electron/dist")) return;
+  const installer = path.join(ROOT, "node_modules", "electron", "install.js");
+  if (!exists("node_modules/electron/install.js")) throw new Error("没有 electron/install.js：先 npm ci");
+  for (const src of order) {
+    const env = { ...process.env };
+    if (src === "cn") env.ELECTRON_MIRROR = process.env.ELECTRON_MIRROR || ELECTRON_MIRROR_CN;
+    console.log(`\n· Electron 二进制缺失，用源 ${src} 下载`);
+    const r = spawnSync(process.execPath, [installer], { cwd: ROOT, stdio: "inherit", env });
+    if (r.status === 0 && exists("node_modules/electron/dist")) { console.log(`  ✓ Electron 就绪（${src}）`); return; }
+    if (src !== order[order.length - 1]) console.log(`  ! ${src} 没装上，换下一个源`);
+  }
+  throw new Error("Electron 二进制下载失败：手动跑 node node_modules/electron/install.js（可先设 ELECTRON_MIRROR）");
+}
+
+/** electron-builder：二进制源按顺序试，失败换下一个（多半是 winCodeSign/nsis 下载失败） */
+function runBuilder(targetArgs) {
+  const cli = path.join(ROOT, "node_modules", "electron-builder", "cli.js");
+  let last = "";
+  for (let i = 0; i < order.length; i++) {
+    const src = order[i];
+    const env = { ...process.env };
+    if (src === "cn") {
+      env.ELECTRON_BUILDER_BINARIES_MIRROR = process.env.ELECTRON_BUILDER_BINARIES_MIRROR || BUILDER_MIRROR_CN;
+      // 跨平台打包时 electron-builder 自己要下目标平台的 Electron 包，也吃这个变量
+      env.ELECTRON_MIRROR = process.env.ELECTRON_MIRROR || ELECTRON_MIRROR_CN;
+    }
+    console.log(`\n· electron-builder（二进制源 ${src}）`);
+    const r = spawnSync(process.execPath, [cli, ...targetArgs], { cwd: ROOT, stdio: "inherit", env });
+    if (r.error) throw new Error(`electron-builder 启动失败：${r.error.code || r.error.message}`);
+    if (r.status === 0) return;
+    last = `退出码 ${r.status}${r.signal ? `，signal=${r.signal}` : ""}`;
+    if (i < order.length - 1) console.log(`  ! ${src} ${last}；可能是二进制下载失败，换下一个源重试`);
+  }
+  throw new Error(`electron-builder ${last}（所有源都试过了）`);
 }
 
 function buildMac() {
@@ -76,11 +117,11 @@ function buildWin() {
     : ["--win", ...(format ? [format] : []), "--x64"];
   // Windows 上不能直接 spawn npx.cmd（CVE-2024-27980 后 EINVAL）；
   // 用 node + 本地 cli.js，跨平台、不经过 shell，也固定 electron-builder 版本。
-  const cli = path.join(ROOT, "node_modules", "electron-builder", "cli.js");
-  run(process.execPath, [cli, ...targetArgs]);
+  runBuilder(targetArgs);
 }
 
-console.log(`== 构建 ${target} / lite${withMlx ? " / mlx" : ""}${dir ? " / dir" : ""}`);
+console.log(`== 构建 ${target} / lite${withMlx ? " / mlx" : ""}${dir ? " / dir" : ""}（下载源 ${order.join(" → ")}）`);
 checkNode();
+ensureElectron();
 if (isMac) buildMac(); else buildWin();
 console.log("\n✅ 构建完成");

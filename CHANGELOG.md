@@ -1,5 +1,27 @@
 # 更新日志
 
+## 未发布
+
+### 构建
+
+- 下载改为「镜像优先、官方兜底」（仿 Go 的 `GOPROXY`）：whisper 源码/模型、Electron 二进制、electron-builder 二进制都按源顺序试，超时或哈希不符才换下一个
+- 新增 `--mirror=auto|cn|official`（或 `NIHONCO_MIRROR`），默认 auto
+- `npm ci` 没下成 Electron 二进制时，构建脚本会自动补下，不再直接报错退出
+
+### 修复
+
+- `check:assets:lite` 的提示按平台区分，mac 上不再打印 Windows 的说法
+
+### 测试
+
+- 新增 6 项下载源顺序测试（`tests/fetch.test.mjs`），基线 350 项
+
+### 文档
+
+- Windows 文档补 Electron 二进制静默失败、镜像开关、构建前置
+
+---
+
 ## v0.7.38 — 修 Windows 无 Whisper 的首启提示
 
 ### 修复

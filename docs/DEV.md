@@ -30,6 +30,13 @@
 
 当前只提供 lite 构建，没有 full 命令。
 
+构建下载默认「镜像优先、官方兜底」（见 `tools/fetch.mjs`），可用 `--mirror` 覆盖：
+
+```bash
+npm run build:app:lite -- --mirror=official   # 只走官方源
+npm run build:win:lite -- --mirror=cn         # 只走镜像
+```
+
 ---
 
 ## 2. 行为测试

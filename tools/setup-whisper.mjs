@@ -18,6 +18,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { mirrorOrder, parseMirrorMode, pickUrls, downloadFrom } from "./fetch.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const rel = (p) => path.join(ROOT, p);
@@ -34,11 +35,19 @@ const info = (m) => console.log(`  · ${m}`);
 
 // 版本钉死，避免上游改 CMake 选项/目标名导致编译失败（Windows 那边 pin 的是 b5454）
 const WC_TAG = process.env.WHISPER_CPP_TAG || "v1.9.5";
-const SRC_TGZ = `https://gh-proxy.com/https://github.com/ggml-org/whisper.cpp/archive/refs/tags/${WC_TAG}.tar.gz`;
+// 源顺序仿 Go 的 GOPROXY：镜像优先、官方兜底（--mirror=auto|cn|official）
+const MIRROR = parseMirrorMode(process.argv);
+const SRC_URLS = pickUrls({
+  cn: [`https://gh-proxy.com/https://github.com/ggml-org/whisper.cpp/archive/refs/tags/${WC_TAG}.tar.gz`],
+  official: [`https://github.com/ggml-org/whisper.cpp/archive/refs/tags/${WC_TAG}.tar.gz`],
+}, mirrorOrder(MIRROR));
 // 固定版本 + 固定哈希：升级 whisper.cpp 或替换模型时两处一起改。
 const SRC_SHA256 = process.env.WHISPER_CPP_SHA256 || "ff1a9053feb509ff9d7729703355541ae9690073a6b1c40eb692c962e0dc1720";
 const MODEL_SHA256 = process.env.WHISPER_MODEL_SHA256 || "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb";
-const MODEL_URL = "https://hf-mirror.com/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin";
+const MODEL_URLS = pickUrls({
+  cn: ["https://hf-mirror.com/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin"],
+  official: ["https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin"],
+}, mirrorOrder(MIRROR));
 const MODEL_NAME = "ggml-small-q5_1.bin";
 // 完整文件约 181MB；阈值卡在 170MB，避免把「下了一半」当成已完成
 const MODEL_MIN_BYTES = 170 * 1024 * 1024;
@@ -154,10 +163,16 @@ function buildServer(cmake) {
   fs.mkdirSync(BUILD, { recursive: true });
   if (!has(path.join(BUILD, "CMakeLists.txt"))) {
     const tgz = path.join(BUILD, "src.tgz");
-    if (CHECK) { warn(`缺源码：会下载 whisper.cpp ${WC_TAG}（约 9.8MB）`); return false; }
+    if (CHECK) { warn(`缺源码：会下载 whisper.cpp ${WC_TAG}（约 9.8MB，源 ${MIRROR}）`); return false; }
+    // 源码包只有 9.8MB，每次重下：避免续传一个坏掉的半截包
+    try { fs.unlinkSync(tgz); } catch (e) {}
     console.log("\n  · 下载 whisper.cpp 源码…");
-    if (!run("curl", ["-sL", "--max-time", "300", "-o", tgz, SRC_TGZ])) { bad("源码下载失败"); return false; }
-    if (!verifyFile(tgz, SRC_SHA256, "whisper.cpp 源码")) return false;
+    const got = downloadFrom({
+      urls: SRC_URLS, dst: tgz, minBytes: 1024 * 1024, sha256: SRC_SHA256,
+      label: ` whisper.cpp 源码（${WC_TAG}）`, maxTime: 300, log: info,
+    });
+    if (!got.ok) { bad("源码下载失败：所有源都没成（--mirror=official 可强制走官方）"); return false; }
+    ok(`源码下载完成（${got.url}）`);
     if (!run("tar", ["xzf", tgz, "-C", BUILD, "--strip-components=1"])) { bad("解压失败"); return false; }
     ok("源码就绪");
   } else {
@@ -196,17 +211,21 @@ function ensureModel() {
       return true;
     }
   }
-  if (CHECK) { warn(`缺模型：会下载 ${MODEL_NAME}（约 181MB）并校验`); return false; }
+  if (CHECK) { warn(`缺模型：会下载 ${MODEL_NAME}（约 181MB，源 ${MIRROR}）并校验`); return false; }
   console.log(`\n  · 下载模型 ${MODEL_NAME}（约 181MB，支持断点续传）…`);
-  for (let i = 1; i <= 4; i++) {
-    run("curl", ["-sL", "--max-time", "600", "-C", "-", "-o", dst, MODEL_URL]);
-    if (modelReady(dst) && verifyFile(dst, MODEL_SHA256, MODEL_NAME)) {
+  // 两轮：同一个源中途断了还能续，第一轮全失败才彻底放弃
+  for (let round = 1; round <= 2; round++) {
+    const got = downloadFrom({
+      urls: MODEL_URLS, dst, minBytes: MODEL_MIN_BYTES, sha256: MODEL_SHA256,
+      label: `模型 ${MODEL_NAME}`, maxTime: 600, log: info,
+    });
+    if (got.ok && verifyFile(dst, MODEL_SHA256, MODEL_NAME)) {
       ok(`模型就绪：${MODEL_NAME}（${Math.round(fs.statSync(dst).size / 1024 / 1024)}MB）`);
       return true;
     }
-    warn(`第 ${i} 次没下完或校验失败，重试…`);
+    if (round < 2) warn("第一轮没成，重试（会从断点续传）…");
   }
-  bad("模型下载失败：可以手动 curl（见 docs/NOTES.md）");
+  bad("模型下载失败：可以手动放到 .whisper/models/，或用 --mirror=official 再试");
   return false;
 }
 
@@ -214,6 +233,7 @@ function ensureModel() {
 console.log("\nNihonco whisper.cpp 准备（macOS / Metal）\n" + "=".repeat(44));
 console.log(`平台 ${process.platform} ${process.arch}${CHECK ? " · --check 只看计划" : ""}`);
 console.log(`源码 whisper.cpp ${WC_TAG}（sha256 校验）`);
+console.log(`下载源模式 ${MIRROR}：${mirrorOrder(MIRROR).join(" → ")}`);
 
 let code = 0;
 const exeOk = has(BIN) && !FORCE;

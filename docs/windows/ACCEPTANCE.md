@@ -39,15 +39,16 @@ npm -v
 Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 ```
 
-国内镜像：
+### 下载源
+
+构建脚本自动「镜像优先、官方兜底」（Electron / electron-builder 二进制，以及 mac 的 whisper 源码/模型）：
 
 ```powershell
-$env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
-$env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-builder-binaries/'
+npm run build:win:lite -- --mirror=official   # 只走官方
+npm run build:win:lite -- --mirror=cn         # 只走镜像
 ```
 
-换源不是回退：没设就是 GitHub，失败不会自动切镜像。npm 包另加
-`--registry https://registry.npmmirror.com`。
+`npm ci` 不在此列，网络慢时加 `--registry https://registry.npmmirror.com`。
 
 ---
 
@@ -62,8 +63,10 @@ npm run setup
 
 ```powershell
 Test-Path node_modules\electron\dist\electron.exe   # 应为 True
-node node_modules\electron\install.js               # 缺了再跑这条
 ```
+
+缺了不用手动补——`npm run build:win:*` 会按镜像→官方自动下载；只想单独补就
+`node node_modules\electron\install.js`。
 
 ```powershell
 Copy-Item .env.example .env
@@ -121,7 +124,7 @@ npm run build:win:lite       # NSIS + portable
 前置与首次开销：
 
 ```text
-node_modules\electron\dist 必须存在（缺了 node node_modules\electron\install.js）
+node_modules\electron\dist 缺失时构建脚本会自动补（镜像 → 官方）
 首次构建下 winCodeSign-2.6.0 / nsis-3.0.4.1 / nsis-resources-3.4.1（几 MB，之后走缓存）
 不下载 whisper，也不打包 .whisper
 ```

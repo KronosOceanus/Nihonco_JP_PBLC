@@ -30,15 +30,29 @@ TTS：VOICEVOX / AivisSpeech（外部引擎）
 | 磁盘 | 至少 2GB；Whisper 模型另约 181MB；VOICEVOX 另加约 2GB |
 | 显卡 | 无要求；NVIDIA 可选 CUDA |
 
-国内镜像：
+### 下载源
 
-```powershell
-$env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
-$env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-builder-binaries/'
+构建脚本按「镜像优先、官方兜底」下载（仿 Go 的 `GOPROXY`）：
+
+```text
+Electron 二进制        npmmirror  →  github.com
+electron-builder 二进制 npmmirror  →  github.com
+whisper 源码 / 模型     只在 mac 构建用到，同样镜像优先
 ```
 
-这两个变量是**换源**，不是回退：设了就用镜像，没设就只走 GitHub，失败也不会自动切。
-npm 包另需 `--registry https://registry.npmmirror.com`（或写进 `.npmrc`）。
+每个源都有超时，失败/超时/哈希不符就换下一个，不会吊在一个死源上。
+
+```powershell
+npm run build:win:lite -- --mirror=official   # 只走官方
+npm run build:win:lite -- --mirror=cn         # 只走镜像
+$env:NIHONCO_MIRROR = 'cn'                    # 环境变量写法
+```
+
+`npm ci` 仍归 npm 管（它没有回退机制），网络慢时自己加：
+
+```powershell
+npm ci --registry https://registry.npmmirror.com
+```
 
 ---
 
@@ -246,10 +260,10 @@ Windows lite 不再执行 `setup-whisper`：不下载模型，也不打包 `.whi
 前置：
 
 ```text
-node_modules\electron\dist 必须存在（缺了跑 node node_modules\electron\install.js）
+node_modules\electron\dist 必须存在；缺了构建脚本会自己用镜像补（失败再走官方）
 ```
 
-首次构建还会下 `winCodeSign-2.6.0` / `nsis-3.0.4.1` / `nsis-resources-3.4.1`（几 MB，缓存在 `%LOCALAPPDATA%\electron-builder\Cache`），之后不再下载。
+首次构建还会下 `winCodeSign-2.6.0` / `nsis-3.0.4.1` / `nsis-resources-3.4.1`（几 MB，缓存在 `%LOCALAPPDATA%\electron-builder\Cache`），之后不再下载。下载失败会自动换下一个源重试整次构建。
 
 别名：
 
