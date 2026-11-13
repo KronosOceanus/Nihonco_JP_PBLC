@@ -8,6 +8,12 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   const ttsConfig = require('../../agent/tts-config');
   const assetInstall = require('../../agent/asset-install');
   const ASSET_BASE = assetInstall.assetBase({ root: ROOT, assetsDir: ASSET_DIR });
+  const friendlyInstallError = (e) => {
+    const code = e && e.code;
+    if (code === 'ENOSPC') return new Error('磁盘空间不足：请清理系统盘或 %APPDATA% 后重试');
+    if (code === 'EPERM' || code === 'EACCES') return new Error('文件被占用或无权限：请先退出 Nihonco/ASR 后重试');
+    return e;
+  };
   const asrDirOf = () => process.env.NIHONCO_ASR_DIR || path.join(app.getPath('userData'), 'asr');
   const changed = (next) => { try { getWin()?.webContents.send('cfg:changed', next); } catch (_) {} };
 
@@ -247,9 +253,20 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
     }
     const wasRunning = kind === 'tts' && !!voiceSvc.getEngineProc();
     if (kind === 'tts') voiceSvc.stopEngine();
+
+    // Windows 上 whisper-server 会占用当前模型文件；先停掉再替换，避免 EPERM。
+    const wasAsr = kind === 'asr';
+    if (wasAsr) {
+      try { stopAsr(); } catch (e) {}
+      await new Promise((r) => setTimeout(r, 700));
+    }
+
     let r;
     try {
       r = assetInstall.install({ kind, src, root: ROOT, assetsDir: ASSET_DIR, userData: USER_DATA, whisperModelsDir: WHISPER_MODELS_DIR, app, platform: process.platform });
+    } catch (e) {
+      if (wasAsr) { try { await restartAsr(); } catch (e2) {} }
+      throw friendlyInstallError(e);
     } finally {
       if (wasRunning) voiceSvc.startTtsEngine();
     }
