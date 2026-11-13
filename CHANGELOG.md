@@ -1,5 +1,18 @@
 # 更新日志
 
+## v0.7.36 — 始终置顶开关
+
+### 功能
+
+- 新增「始终置顶」开关：设置 → Live2D、右键菜单、`Cmd+Ctrl+T` / `Ctrl+Alt+T` 都可切换
+- 开启后启动、失焦、切到其他应用、重启都保持置顶；关闭后恢复「有焦点才置顶」
+- 始终置顶使用 `floating` 层级，避免盖住输入法候选窗
+
+### 修复
+
+- Windows 构建不再直接 `spawn npx.cmd`（Node CVE-2024-27980 后会报 `EINVAL`），改用 `node + node_modules/electron-builder/cli.js`
+- 构建脚本失败时先输出 `spawn` 错误码，不再只显示误导性的「退出码 null」
+
 ## v0.7.35 — 修复 Windows 安装 ASR 模型 EPERM
 
 ### 修复

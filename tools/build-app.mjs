@@ -40,7 +40,13 @@ if (format && !["nsis", "portable"].includes(format)) throw new Error("--format 
 function run(cmd, argv, opts = {}) {
   console.log(`\n$ ${cmd} ${argv.join(" ")}`);
   const r = spawnSync(cmd, argv, { cwd: ROOT, stdio: "inherit", ...opts });
-  if (r.status !== 0) throw new Error(`${cmd} 退出码 ${r.status}`);
+  // Windows 上直接 spawn .cmd/.bat 会得到 status=null + error=EINVAL；
+  // 先看 r.error，避免把 EINVAL 误报成“退出码 null”。
+  if (r.error) throw new Error(`${cmd} 启动失败：${r.error.code || r.error.message}`);
+  if (r.status !== 0) {
+    const signal = r.signal ? `，signal=${r.signal}` : "";
+    throw new Error(`${cmd} 退出码 ${r.status}${signal}`);
+  }
 }
 
 function exists(rel) { try { return fs.existsSync(path.join(ROOT, rel)); } catch { return false; } }
@@ -52,6 +58,7 @@ function ensureMlx() {
 function checkNode() {
   if (!exists("node_modules/electron")) throw new Error("没有 node_modules/electron：先 npm ci");
   if (!exists("node_modules/electron/dist")) throw new Error("Electron 二进制没下载：node node_modules/electron/install.js");
+  if (!exists("node_modules/electron-builder/cli.js")) throw new Error("没有 electron-builder：先 npm ci");
 }
 
 function buildMac() {
@@ -67,7 +74,10 @@ function buildWin() {
   const targetArgs = dir
     ? ["--win", "--x64", "--dir"]
     : ["--win", ...(format ? [format] : []), "--x64"];
-  run(process.platform === "win32" ? "npx.cmd" : "npx", ["electron-builder", ...targetArgs]);
+  // Windows 上不能直接 spawn npx.cmd（CVE-2024-27980 后 EINVAL）；
+  // 用 node + 本地 cli.js，跨平台、不经过 shell，也固定 electron-builder 版本。
+  const cli = path.join(ROOT, "node_modules", "electron-builder", "cli.js");
+  run(process.execPath, [cli, ...targetArgs]);
 }
 
 console.log(`== 构建 ${target} / lite${withMlx ? " / mlx" : ""}${dir ? " / dir" : ""}`);
