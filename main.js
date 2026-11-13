@@ -184,11 +184,13 @@ const ipc = createIpc({
   openSettings: () => openSettings(),
   loadPet: (w) => windowSvc.loadPet(w),
   getLevelIdle: () => windowSvc.getLevelIdle(),
+  getAlwaysOnTop: () => windowSvc.getAlwaysOnTop(),
   getPassThrough: () => windowSvc.getPassThrough(),
   isPackaged: IS_PACKAGED,
   // 这两个都在后面才创建：惰性包装，调用时解析
   menus: { buildMenu: (...a) => menus.buildMenu(...a), buildAppMenu: (...a) => menus.buildAppMenu(...a) },
   setPassThrough: (on) => windowSvc.setPassThrough(on),
+  setAlwaysOnTop: (on) => windowSvc.setAlwaysOnTop(on),
   petResize: (x, y, corner) => windowSvc.petResize(x, y, corner),
   petResizeEnd: () => windowSvc.petResizeEnd(),
   getPetSize: () => windowSvc.getPetSize(),
@@ -203,9 +205,9 @@ const ipc = createIpc({
 const windowSvc = createWindows({
   app, BrowserWindow: require('electron').BrowserWindow, screen,
   ROOT, VOICE_DIR, tts, agent, platform, voiceSvc, asrSvc,
-  prewarmPrompts,
+  prewarmPrompts, config,
 });
-const { createWindow, loadPet, toggleLevelIdle, setPassThrough } = windowSvc;
+const { createWindow, loadPet, setPassThrough } = windowSvc;
 
 
 // 只允许一个实例（必须在设置 userData 之后，否则锁文件会写到 ~/Library）
@@ -242,13 +244,22 @@ function openSettings() {
   return settingsWin;
 }
 
+// 托盘/快捷键切换也要落盘；设置窗口走 cfg:set，已经自己持久化。
+function persistAlwaysOnTop(on) {
+  const next = !!on;
+  try { config.patch({ alwaysOnTop: next }); } catch (e) { console.log('[alwaysOnTop] 保存失败', e.message); }
+  windowSvc.setAlwaysOnTop(next);
+  return next;
+}
+
 // 菜单：回调通过 getter/函数注入，避免模块间循环依赖
 const menus = createMenus({
   Menu, app, shell, screen, root: ROOT,
   getWin: () => windowSvc.getWin(),
   getLevelIdle: () => windowSvc.getLevelIdle(),
+  getAlwaysOnTop: () => windowSvc.getAlwaysOnTop(),
   getPassThrough: () => windowSvc.getPassThrough(),
-  toggleLevelIdle: () => toggleLevelIdle(),
+  setAlwaysOnTop: (on) => persistAlwaysOnTop(on),
   setPassThrough: (on) => windowSvc.setPassThrough(on),
   openSettings: () => openSettings(),
   isWin: IS_WIN,
@@ -313,7 +324,7 @@ app.whenReady().then(async () => {
   // macOS：Cmd+Ctrl+T/P；Windows：Ctrl+Alt+T/P（Ctrl+Ctrl 在 Windows 上注册不上）
   const MOD = platform.shortcutMod();
   globalShortcut.register(`${MOD}+P`, () => windowSvc.setPassThrough(!windowSvc.getPassThrough()));
-  globalShortcut.register(`${MOD}+T`, () => windowSvc.toggleLevelIdle());
+  globalShortcut.register(`${MOD}+T`, () => persistAlwaysOnTop(!windowSvc.getAlwaysOnTop()));
   globalShortcut.register('CommandOrControl+,', () => openSettings());
 
   registerGlobalShortcuts();

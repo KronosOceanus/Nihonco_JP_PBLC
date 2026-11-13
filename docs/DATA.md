@@ -79,7 +79,7 @@ mac：
 | `data/patternbook.baseline.json` | 句型日志重放基线 | ❌ |
 | `data/vocab-daily.json` | 今日单词批次 / 模式 / 档位 | ❌ |
 | `data/pattern-daily.json` | 今日句型 / 模式 / 档位 | ❌ |
-| `data/settings.json` | 全局水平 + 声线参数 | ❌ |
+| `data/settings.json` | 全局水平 + 声线参数 + 始终置顶 | ❌ |
 | `data/live2d-models.json` | 模型路径 → 取景参数 | ❌ |
 | `data/enrich-cache.json` | 本地新增例句 | ❌ |
 

@@ -1,6 +1,6 @@
 /* 主窗口：创建、加载挂件页、层级与穿透、截图/自检钩子
  *
- * 状态（win / staticPort / passThrough / levelIdle）封装在工厂闭包里，
+ * 状态（win / staticPort / passThrough / levelIdle / alwaysOnTop）封装在工厂闭包里，
  * 对外只给 getter 与操作函数——菜单与 IPC 都通过这里拿窗口引用。
  */
 const path = require("path");
@@ -9,7 +9,7 @@ const windowSize = require("../agent/window-size");
 
 module.exports = function createWindows({
   app, BrowserWindow, screen, ROOT, VOICE_DIR,
-  tts, agent, platform, voiceSvc, asrSvc, prewarmPrompts,
+  tts, agent, platform, voiceSvc, asrSvc, prewarmPrompts, config,
 }) {
 
 
@@ -19,6 +19,7 @@ let staticPort = 0;   // 静态服务端口（设置窗口要用）
 /* IPC 注册只做一次（窗口重建时不会因为 "second handler" 抛错） */
 let passThrough = false;
 let levelIdle = process.env.PET_LEVEL || 'floating';   // 常驻层级：floating 不挡输入法 / screen-saver 压住一切
+let alwaysOnTop = false;                                // 始终置顶：失焦也不掉；由 config 持久化
 
 /* 按当前配置加载挂件页（换模型时也走这里）
  * w 可以不传：默认用当前挂件窗口。传丢了窗口（或窗口已销毁）时直接返回，
@@ -42,6 +43,32 @@ async function loadPet(w, overrideFit) {
   for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v);
   await target.loadURL(`http://127.0.0.1:${staticPort}/pet.html${qs.toString() ? '?' + qs : ''}`);
   return true;
+}
+
+/** 始终置顶开关：开启时用 floating（高于普通窗口，但低于输入法候选窗）。
+ *  关闭时回到原有语义：有焦点才置顶，失焦取消。 */
+function applyAlwaysOnTop() {
+  if (!win) return false;
+  try {
+    if (alwaysOnTop) win.setAlwaysOnTop(true, 'floating');
+    else win.setAlwaysOnTop(!!win.isFocused(), levelIdle);
+  } catch (e) {}
+  return alwaysOnTop;
+}
+
+function setAlwaysOnTop(on) {
+  alwaysOnTop = !!on;
+  applyAlwaysOnTop();
+  console.log('[alwaysOnTop]', alwaysOnTop);
+  return alwaysOnTop;
+}
+
+function toggleAlwaysOnTop() {
+  return setAlwaysOnTop(!alwaysOnTop);
+}
+
+function getAlwaysOnTop() {
+  return alwaysOnTop;
 }
 
 async function createWindow(port) {
@@ -75,23 +102,23 @@ async function createWindow(port) {
   });
 
   // 层级换算（macOS）：普通窗口 0 < floating 3 < status 25 < 输入法候选窗 101 < screen-saver 1000
-  // 平时用 screen-saver 压住一切；打字时降到 status —— 仍高于其他应用，但让输入法候选窗露出来
-  // 常驻用 floating(3)：高于普通窗口(0)，但低于输入法候选窗(~100)，
-  // 这样在别的应用里打字时，输入法不会被我们盖住。
-  // 想重新压住全屏应用，可用 PET_LEVEL=screen-saver 启动。
-  const LEVEL_TYPING = 'floating';   // 打字时让位给输入法
-  // 初始不置顶：等用户点击/聚焦后再置顶，避免「置顶但没有焦点」导致永久压住别的应用。
-  win.setAlwaysOnTop(false);
+  // 始终置顶用 floating(3)：高于普通窗口，但低于输入法候选窗，避免盖住候选框。
+  // 想压住全屏应用，可用 PET_LEVEL=screen-saver 启动。
+  // 是否始终置顶由 settings.json 持久化；默认关，保持「聚焦才置顶」的旧行为。
+  try { alwaysOnTop = !!(config && config.get().alwaysOnTop); } catch (e) { alwaysOnTop = false; }
+  applyAlwaysOnTop();
 
-  // 桌宠只在被点击/聚焦时置顶；切到别的应用就退到后面，不隐藏。
+  // 默认：点击/聚焦才置顶，切到别的应用就退到后面。
+  // 始终置顶开启：blur 不清除置顶，保持 floating。
   win.on('blur', () => {
-    try { win.setAlwaysOnTop(false); } catch (e) {}
+    if (!alwaysOnTop) {
+      try { win.setAlwaysOnTop(false); } catch (e) {}
+    }
   });
   win.on('focus', () => {
-    try { win.setAlwaysOnTop(true, levelIdle); } catch (e) {}
+    try { win.setAlwaysOnTop(true, alwaysOnTop ? 'floating' : levelIdle); } catch (e) {}
   });
-
-  // Cmd+Ctrl+T：在「压住一切」和「让位给输入法」之间切换
+  win.on('show', () => { applyAlwaysOnTop(); });
 
   // Windows 没有"所有工作区可见"的概念，跳过（WINDOWS-HANDOVER §3-7）
   if (platform.supportsAllWorkspaces()) win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -116,6 +143,7 @@ async function createWindow(port) {
 
   await loadPet(win);
   win.showInactive(); // 不抢焦点
+  applyAlwaysOnTop(); // 始终置顶时，showInactive 后仍要压在其他窗口上
 
   // 自检用：加载后自动说一句话（验证 TTS + 口型链路）
   if (process.env.PET_SAY) {
@@ -297,16 +325,6 @@ async function createWindow(port) {
   }
 }
 
-function toggleLevelIdle() {
-  levelIdle = levelIdle === "floating" ? "screen-saver" : "floating";
-  // 只在桌宠当前有焦点时立即应用；否则等下次 focus，避免从别的应用里把它顶上来。
-  if (win?.isFocused()) {
-    try { win.setAlwaysOnTop(true, levelIdle); } catch (e) {}
-  }
-  console.log("[level]", levelIdle);
-  return levelIdle;
-}
-
 /** 应用尺寸：夹到工作区 90%
  *  anchor：'br' = 右下角固定（设置里改大小、拖左上角）；'tl' = 左上角固定（拖右下角） */
 function applyPetSize(w, h, { anchor = "br", left, top, right, bottom, save = false } = {}) {
@@ -378,8 +396,8 @@ function raisePet({ focus = false } = {}) {
     try { app.focus({ steal: true }); } catch (e) {}
     win.focus();
   }
-  // 不在未确认焦点时置顶；真正的 focus 事件会补上置顶。
-  if (win.isFocused()) win.setAlwaysOnTop(true, levelIdle);
+  // 始终置顶时不需要等焦点；否则保持旧行为，等 focus 事件补上。
+  applyAlwaysOnTop();
   return true;
 }
 
@@ -389,8 +407,8 @@ function toggleVisibility() {
   if (win.isVisible()) { win.hide(); return false; }
   win.show();
   win.focus();
-  // 如果 show/focus 还没真正拿到焦点，先不要置顶；focus 事件会补上。
-  win.setAlwaysOnTop(win.isFocused(), levelIdle);
+  // 始终置顶时 show 后立即置顶；否则等 focus 事件确认焦点。
+  applyAlwaysOnTop();
   return true;
 }
 
@@ -407,7 +425,9 @@ function setPassThrough(on) {
   function setStaticPort(p) { staticPort = p; }
   function getStaticPort() { return staticPort; }
 
-  return { createWindow, loadPet, toggleLevelIdle, toggleVisibility, raisePet, setPassThrough,
+  return { createWindow, loadPet, setAlwaysOnTop, toggleAlwaysOnTop,
+           toggleVisibility, raisePet, setPassThrough,
            petResize, petResizeEnd, getPetSize, setPetSize,
-           getWin, getLevelIdle, getPassThrough, setStaticPort, getStaticPort };
+           getWin, getLevelIdle, getAlwaysOnTop, getPassThrough,
+           setStaticPort, getStaticPort };
 };

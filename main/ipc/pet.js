@@ -5,7 +5,7 @@ const langGuard = require("../../agent/lang-guard");
 
 module.exports = function registerPetIpc({
   petHandle, petOn, app, agent, tts, voiceCache, asrSvc, voiceSvc, asrLog, platform,
-  ensureAsr, restartAsr, speakToWav, getWin, getLevelIdle, menus, setPassThrough,
+  ensureAsr, restartAsr, speakToWav, getWin, getLevelIdle, getAlwaysOnTop, menus, setPassThrough,
   openSettings, petResize, petResizeEnd, VOICE_DIR,
 }) {
   // 学习水平：读取/切换（持久化到 data/settings.json）
@@ -23,10 +23,14 @@ module.exports = function registerPetIpc({
   // 桌宠窗口的「設定」按钮（只接受桌宠窗口）
   petOn('pet:open-settings', () => openSettings());
 
-  // 打字时让位给输入法候选框
+  // 打字时让位给输入法候选框；始终置顶时保持在 floating，不因输入框失焦掉下去
   petHandle('pet:typing', (typing) => {
     try {
-      if (getWin()) getWin().setAlwaysOnTop(true, typing ? 'floating' : getLevelIdle());
+      const w = getWin();
+      const on = getAlwaysOnTop ? !!getAlwaysOnTop() : false;
+      if (!w) return true;
+      if (on || typing) w.setAlwaysOnTop(true, 'floating');
+      else w.setAlwaysOnTop(!!w.isFocused(), getLevelIdle());
     } catch (e) {}
     return true;
   });

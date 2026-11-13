@@ -64,11 +64,41 @@ function bindLive2d() {
   if (saveBtn) saveBtn.addEventListener("click", () => apply(true));
 }
 
+function renderAlwaysOnTop(c) {
+  const btn = $("alwaysOnTop");
+  if (!btn) return;
+  const on = !!(c && c.alwaysOnTop);
+  btn.textContent = on ? "开启" : "关闭";
+  btn.classList.toggle("on", on);
+}
+
+function bindAlwaysOnTop() {
+  const btn = $("alwaysOnTop");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    try {
+      // 以主进程当前值为准：托盘/快捷键也可能改过
+      const cur = await window.cfg.get();
+      const next = !cur.alwaysOnTop;
+      const saved = await window.cfg.set({ alwaysOnTop: next });
+      renderAlwaysOnTop(saved);
+      flash(next ? "已开启始终置顶" : "已关闭始终置顶");
+    } catch (e) {
+      flash("切换失败：" + (e.message || e));
+    }
+  });
+}
+
 async function initLive2d() {
   await loadModels();
   bindLive2d();
+  bindAlwaysOnTop();
 }
 
-window.SettingsApp.register("live2d", { init: initLive2d, load: loadModels });
+window.SettingsApp.register("live2d", {
+  init: initLive2d,
+  load: loadModels,
+  render: renderAlwaysOnTop,
+});
 
 })();

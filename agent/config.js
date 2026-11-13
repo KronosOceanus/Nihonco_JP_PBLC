@@ -41,6 +41,8 @@ function defaults() {
       intonation: num(process.env.VOICEVOX_INTONE, 1.0),
       volume: num(process.env.VOICEVOX_VOLUME, 1.0),
     },
+    // 始终置顶：默认关；用户开启后写进 settings.json，重启仍生效。
+    alwaysOnTop: String(process.env.PET_ALWAYS_ON_TOP || "").toLowerCase() === "1",
   };
 }
 
@@ -70,6 +72,8 @@ function get() {
   return {
     level,
     voice: clampVoice({ ...d.voice, ...(raw.voice || {}) }),
+    // 始终置顶：持久化在 settings.json；旧文件没有该字段时用默认值。
+    alwaysOnTop: raw.alwaysOnTop === undefined ? d.alwaysOnTop : !!raw.alwaysOnTop,
     // 只读展示用（来自 .env，不在界面里改）
     llm: {
       baseUrl: process.env.LLM_BASE_URL || "https://api.deepseek.com/v1",
@@ -103,7 +107,11 @@ function write(raw) {
 /** 只接受白名单字段的补丁 */
 function patch(p = {}) {
   const cur = get();
-  const raw = { level: cur.level, voice: { ...cur.voice } };
+  const raw = {
+    level: cur.level,
+    voice: { ...cur.voice },
+    alwaysOnTop: cur.alwaysOnTop,
+  };
 
   if (p.level !== undefined) {
     const lv = String(p.level).toUpperCase();
@@ -112,6 +120,7 @@ function patch(p = {}) {
   if (p.voice && typeof p.voice === "object") {
     raw.voice = clampVoice({ ...raw.voice, ...p.voice });
   }
+  if (p.alwaysOnTop !== undefined) raw.alwaysOnTop = !!p.alwaysOnTop;
   write(raw);
   return get();
 }

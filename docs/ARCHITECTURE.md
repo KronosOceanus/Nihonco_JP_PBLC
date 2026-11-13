@@ -157,7 +157,7 @@ main.js
 → 初始化 userData / data / voice 目录
 → 设置 WHISPER_HOME / NIHONCO_WHISPER_MODELS / NIHONCO_ASR_DIR
 → 创建静态服务
-→ 创建桌宠窗口（初始不置顶）
+→ 创建桌宠窗口（默认不置顶；settings.json 开启始终置顶时创建即置顶）
 → 加载 pet.html
 → 预热 kuromoji
 → 注册 IPC
@@ -207,7 +207,7 @@ TTS 直接读原文，不经过读音表
 
 ## 5. 窗口层级
 
-原则：
+默认行为（`alwaysOnTop = false`）：
 
 ```text
 置顶时一定有焦点
@@ -217,28 +217,38 @@ TTS 直接读原文，不经过读音表
 实现：
 
 ```js
-win.on('blur',  () => win.setAlwaysOnTop(false));
-win.on('focus', () => win.setAlwaysOnTop(true, levelIdle));
+win.on('blur',  () => { if (!alwaysOnTop) win.setAlwaysOnTop(false); });
+win.on('focus', () => win.setAlwaysOnTop(true, alwaysOnTop ? 'floating' : levelIdle));
+```
+
+始终置顶（`alwaysOnTop = true`，持久化在 `data/settings.json`）：
+
+```text
+启动：可见、置顶、不抢焦点
+失焦：仍然置顶
+点击别的应用：不取消置顶
+重启：从 settings.json 恢复
+```
+
+层级：
+
+```text
+始终置顶用 floating：高于普通窗口，低于输入法候选窗
+PET_LEVEL=screen-saver 仍可作为高级选项压住一切
 ```
 
 行为：
 
 ```text
-启动：可见、不置顶、不抢焦点
-点击桌宠：focus → 置顶
-点击别的应用：blur → 取消置顶，不隐藏
-显示快捷键：show + focus + 置顶
+默认启动：可见、不置顶、不抢焦点
+默认点击桌宠：focus → 置顶
+默认点击别的应用：blur → 取消置顶，不隐藏
+始终置顶开启：任何焦点状态都保持 floating
+显示快捷键：show + 恢复置顶
 聚焦输入快捷键：show + 恢复置顶 + 真正聚焦
 ```
 
-层级切换：
-
-```text
-mac：floating ⇄ screen-saver
-Windows：topmost 开关
-```
-
-只有桌宠当前有焦点时才立即应用层级；没焦点时只记住。
+`Cmd+Ctrl+T` / `Ctrl+Alt+T` 切换「始终置顶」，不是切换 `floating ⇄ screen-saver`。
 
 ---
 

@@ -14,8 +14,9 @@ function build(overrides = {}) {
     app: {}, shell: {}, screen: {}, root: "/tmp",
     getWin: () => null,
     getLevelIdle: () => "floating",
+    getAlwaysOnTop: () => false,
     getPassThrough: () => false,
-    toggleLevelIdle: () => {},
+    setAlwaysOnTop: () => {},
     setPassThrough: () => {},
     openSettings: () => {},
     isWin: false,
@@ -43,12 +44,26 @@ test("点「恢复默认大小」会调用注入的 resetPetSize", () => {
   assert.deepEqual(calls, ["resetPetSize"]);
 });
 
+test("始终置顶菜单项反映状态，点击会调用 setAlwaysOnTop", () => {
+  const calls = [];
+  const { tpl } = build({
+    getAlwaysOnTop: () => true,
+    setAlwaysOnTop: (on) => calls.push(["alwaysOnTop", on]),
+  });
+  const item = tpl.find((x) => x && x.label === "始终置顶（Cmd+Ctrl+T 切换）");
+  assert.ok(item, "要有「始终置顶」");
+  assert.equal(item.checked, true);
+  item.click({ checked: false });
+  assert.deepEqual(calls, [["alwaysOnTop", false]]);
+});
+
 test("没注入 resetPetSize 时点击不抛错（防菜单整个坏掉）", () => {
   const menus = createMenus({
     Menu: { buildFromTemplate: (t) => t },
     app: {}, shell: {}, screen: {}, root: "/tmp",
-    getWin: () => null, getLevelIdle: () => "floating", getPassThrough: () => false,
-    toggleLevelIdle: () => {}, setPassThrough: () => {}, openSettings: () => {}, isWin: false,
+    getWin: () => null, getLevelIdle: () => "floating",
+    getAlwaysOnTop: () => false, getPassThrough: () => false,
+    setAlwaysOnTop: () => {}, setPassThrough: () => {}, openSettings: () => {}, isWin: false,
   });
   const item = menus.buildMenu().find((x) => x && x.label === "恢复默认大小");
   assert.doesNotThrow(() => item.click());

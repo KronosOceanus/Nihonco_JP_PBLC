@@ -1,6 +1,7 @@
 /* 设置项通道：配置 / API key / provider / 模型 / 开机自启 / 资源链接 */
 module.exports = function registerConfigIpc({ settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
   app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, asrGpu, ensureTtsEngine, restartAsr, stopAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
+  setAlwaysOnTop,
 }) {
   const fs = require('fs');
   const path = require('path');
@@ -25,10 +26,13 @@ module.exports = function registerConfigIpc({ settingsHandle, getWin, config, ag
   });
 
   settingsHandle('cfg:set', (e, patch) => {
-    const before = config.get().voice;
+    const before = config.get();
     const next = config.patch(patch || {});
     agent.setLevel(next.level);                                  // 让后端 CONF 同步
-    if (JSON.stringify(before) !== JSON.stringify(next.voice)) refreshVoiceCache();
+    if (JSON.stringify(before.voice) !== JSON.stringify(next.voice)) refreshVoiceCache();
+    if (next.alwaysOnTop !== before.alwaysOnTop) {
+      try { setAlwaysOnTop(next.alwaysOnTop); } catch (err) {}
+    }
     changed(next);
     return next;
   });

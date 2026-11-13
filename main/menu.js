@@ -7,8 +7,8 @@ const modelActions = require('../agent/model-actions');
 
 module.exports = function createMenus({
   Menu, app, shell, screen, root,
-  getWin, getLevelIdle, getPassThrough,
-  toggleLevelIdle, setPassThrough, openSettings, isWin, resetPetSize,
+  getWin, getLevelIdle, getAlwaysOnTop, getPassThrough,
+  setAlwaysOnTop, setPassThrough, openSettings, isWin, resetPetSize,
 }) {
 function runPet(js) {
   try { getWin()?.webContents.executeJavaScript(js).catch(() => {}); } catch (e) {}
@@ -55,10 +55,10 @@ function buildMenu() {
       } },
     { type: 'separator' },
     {
-      label: '置顶开关（Cmd+Ctrl+T 切换）',
+      label: '始终置顶（Cmd+Ctrl+T 切换）',
       type: 'checkbox',
-      checked: getLevelIdle() === "screen-saver",
-      click: () => toggleLevelIdle(),
+      checked: !!getAlwaysOnTop(),
+      click: (item) => setAlwaysOnTop(item.checked),
     },
     {
       label: '鼠标穿透（Cmd+Ctrl+P 切换）',

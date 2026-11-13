@@ -15,7 +15,7 @@ module.exports = function createIpc(ctx) {
     asrSvc, voiceSvc, asrBackends, asrLog, asrGpu, registerShortcuts, shortcutFailures,
     petResize, petResizeEnd, getPetSize, setPetSize,
     startAsr, restartAsr, stopAsr, ensureAsr, speakToWav, prewarmPrompts, refreshVoiceCache, ensureTtsEngine,
-    openSettings, loadPet, getLevelIdle, getPassThrough, isPackaged,
+    openSettings, loadPet, getLevelIdle, getAlwaysOnTop, getPassThrough, isPackaged,
     menus, setPassThrough,
     ROOT, DATA_DIR, VOICE_DIR, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR,
   } = ctx;
@@ -59,12 +59,12 @@ module.exports = function createIpc(ctx) {
     settingsHandle, settingsOn, getWin, getSettingsWin, app, dialog, backup, config,
     agent, refreshVoiceCache, loadPet, isPackaged, shell, voiceSvc, tts, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
     getPetSize, setPetSize, registerShortcuts, shortcutFailures, ensureTtsEngine, speakToWav,
-    asrBackends, restartAsr, stopAsr, asrGpu, asrLog, asrSvc, platform,
+    asrBackends, restartAsr, stopAsr, asrGpu, asrLog, asrSvc, platform, setAlwaysOnTop: ctx.setAlwaysOnTop,
   });
 
   require('./ipc/pet')({
     petHandle, petOn, app, agent, tts, voiceCache, asrSvc, voiceSvc, asrLog, platform,
-    ensureAsr, restartAsr, speakToWav, getWin, getLevelIdle, menus, setPassThrough,
+    ensureAsr, restartAsr, speakToWav, getWin, getLevelIdle, getAlwaysOnTop, menus, setPassThrough,
     openSettings, petResize, petResizeEnd, VOICE_DIR,
   });
 

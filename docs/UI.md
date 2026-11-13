@@ -56,7 +56,7 @@
 | 右键 → 说话… | 让她主动搭一句话（LLM 现生成） |
 | 右键 → 表情 | 当前模型可触发的表情 / 动作；按 model3、VTube Hotkeys、目录 exp3 自动列出，换模型自动变 |
 | 右键 → 恢复默认大小 / 回到右下角 / 打开项目文件夹 / 退出 | 窗口与项目操作 |
-| `Cmd+Ctrl+T` / `Ctrl+Alt+T` | 层级切换（mac: `floating` ⇄ `screen-saver`；Windows 只有 topmost 开关） |
+| `Cmd+Ctrl+T` / `Ctrl+Alt+T` | 始终置顶开关（开启后失焦也保持置顶，状态持久化） |
 | `Cmd+Ctrl+P` / `Ctrl+Alt+P` | 鼠标穿透开关 |
 
 ## 设置窗口
@@ -220,20 +220,29 @@ hidden → 暂停
 
 ## 窗口层级
 
+默认（始终置顶关闭）：
+
 ```text
 启动 / 隐藏后再显示：不抢焦点，不置顶
 点击桌宠或显示快捷键：拿到焦点后才置顶
 点击别的应用：失焦，取消置顶，不隐藏
 ```
 
+始终置顶开启：
+
+```text
+启动 / 失焦 / 点击别的应用：一直保持置顶
+重启：从 data/settings.json 恢复
+```
+
 原则：
 
 ```text
-置顶时一定有焦点
-无焦点时一定不置顶
+默认：置顶时一定有焦点，无焦点时一定不置顶
+始终置顶：任何焦点状态都保持 floating
 ```
 
-`Cmd+Ctrl+T` / `Ctrl+Alt+T` 只切换层级；桌宠没有焦点时只记住层级，等下次 focus 再应用。
+`Cmd+Ctrl+T` / `Ctrl+Alt+T` 切换「始终置顶」；`PET_LEVEL=screen-saver` 只作为高级层级选项，不再由快捷键切换。
 
 ## 快捷键（agent/shortcuts.js）
 

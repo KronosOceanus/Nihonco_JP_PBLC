@@ -4,12 +4,13 @@ module.exports = function registerSettingsIpc({
   ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR, getPetSize, setPetSize,
   refreshVoiceCache, loadPet, isPackaged, shell, voiceSvc, tts,
   registerShortcuts, shortcutFailures, ensureTtsEngine, speakToWav,
-  asrBackends, restartAsr, stopAsr, asrGpu, asrLog, asrSvc, agent, platform,
+  asrBackends, restartAsr, stopAsr, asrGpu, asrLog, asrSvc, agent, platform, setAlwaysOnTop,
 }) {
 
   require('./config')({
     settingsHandle, getWin, config, agent, refreshVoiceCache, loadPet,
     app, isPackaged, shell, dialog, voiceSvc, tts, asrSvc, asrGpu, ensureTtsEngine, restartAsr, stopAsr, platform, ROOT, ASSET_DIR, USER_DATA, WHISPER_MODELS_DIR, DATA_DIR,
+    setAlwaysOnTop,
   });
 
   settingsHandle('cfg:pet-size', () => {

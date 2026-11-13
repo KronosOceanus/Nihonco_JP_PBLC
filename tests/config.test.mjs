@@ -33,6 +33,21 @@ test("patch 只接受白名单字段（乱塞的键不进配置）", () => {
   config.patch({ level: before });
 });
 
+test("alwaysOnTop 持久化：开着就保存，重启后仍能读回", () => {
+  const before = config.get().alwaysOnTop;
+  try {
+    assert.equal(config.patch({ alwaysOnTop: true }).alwaysOnTop, true);
+    assert.equal(config.get().alwaysOnTop, true);
+    const raw = JSON.parse(fs.readFileSync(`${dir}/settings.json`, "utf8"));
+    assert.equal(raw.alwaysOnTop, true);
+
+    assert.equal(config.patch({ alwaysOnTop: false }).alwaysOnTop, false);
+    assert.equal(config.get().alwaysOnTop, false);
+  } finally {
+    config.patch({ alwaysOnTop: before });
+  }
+});
+
 test("非法水平不会写进配置", () => {
   const before = config.get().level;
   config.patch({ level: "N9" });
