@@ -18,8 +18,8 @@
 约定：
 
 ```text
-1. 数字只写在 ACCEPTANCE（tests 条数、体积、文件数）；WINDOWS 不写具体数字，
-   需要时写「见 ACCEPTANCE」
+1. 发版数字基线（tests 条数、产物体积、文件数）只写在 ACCEPTANCE，WINDOWS 不写；
+   依赖版本表反过来，只在 WINDOWS §2 维护，ACCEPTANCE 链过来、不复制
 2. ACCEPTANCE 不复制原理，只写动作 + 判定条件，原理链到 WINDOWS 对应小节
 3. 「已知问题」只维护在 WINDOWS §10；ACCEPTANCE 只临时记「本次发版新发现的坑」，
    发版后并入 WINDOWS 并删掉
@@ -292,9 +292,8 @@ AivisSpeech 首次启动下载 BERT（约 1GB+），设置页显示阶段。
 ## 7. 构建
 
 ```powershell
-# 构建前先删 dist：electron-builder 会复用 win-unpacked，
-# 旧版本 app.asar.unpacked 里的残留（例如 ≤0.7.36 的 .whisper）
-# 会让「包里没有 .whisper」这条验收误判失败
+# 先删 dist（保险）。实测 electron-builder 会重建 app.asar.unpacked，
+# 旧 .whisper 一般不会残留；清一下只是省得排查时被误导
 Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
 
 npm run check:assets:lite
@@ -319,15 +318,21 @@ Windows lite 不再执行 `setup-whisper`：不下载模型，也不打包 `.whi
 前置：
 
 ```text
-node_modules\electron\dist 必须存在；缺了构建脚本会自己用镜像补（失败再走官方）
+node_modules\electron\dist 需要在位；缺了构建脚本会自己用镜像补（失败再走官方）
 ```
 
 首次构建还会下 `winCodeSign-2.6.0` / `nsis-3.0.4.1` / `nsis-resources-3.4.1`（几 MB，缓存在 `%LOCALAPPDATA%\electron-builder\Cache`），之后不再下载。下载失败会自动换下一个源重试整次构建。
 
-注意：**即使 `node_modules\electron\dist` 已经存在，electron-builder 通常仍会下载一次 electron zip**
-（日志：`• downloaded label=electron progress=100% … output=dist\win-unpacked`）。
-所以真·离线构建要显式指定本地二进制，否则断网会在 packaging 阶段 `connect ETIMEDOUT` 失败，
-而 `build-app.mjs` 只会抛出「`node.exe` 退出码 1」，看不出原因——必须翻完整日志：
+注意 electron-builder 用的是**它自己那份 electron zip**，不是 `node_modules\electron\dist`：
+
+```text
+首次构建：额外下 158MB 目标平台 electron zip，之后缓存命中、不再联网
+缓存位置：%LOCALAPPDATA%\electron\Cache（mac 是 ~/Library/Caches/electron）
+日志：    cached/downloaded 都打印 `• downloaded label=electron progress=100%`，
+          看着像每次下载，实际不会
+```
+
+断网且没缓存时会在 packaging 阶段 `connect ETIMEDOUT`，而 `build-app.mjs` 只会抛「`node.exe` 退出码 1」——要看完整日志。离线构建可显式指定本地二进制：
 
 ```powershell
 node node_modules\electron-builder\cli.js --win --x64 --dir -c.electronDist=node_modules/electron/dist
@@ -340,14 +345,15 @@ build:win  = build:win:lite
 build:win:dir = build:win:lite:dir
 ```
 
-产物（v0.7.39 实测）：
+产物：
 
 ```text
 Nihonco-<版本>-lite-setup.exe
 Nihonco-<版本>-lite-portable.exe
-win-unpacked/                429.3 MB / 82 个文件
-win-unpacked 打成 zip        约 170 MB（7z -mx=5）
+win-unpacked/
 ```
+
+体积与文件数基线见 [ACCEPTANCE.md](ACCEPTANCE.md) §5。
 
 ---
 
@@ -427,7 +433,7 @@ CUDA 包约 653MB，峰值磁盘约 1.8GB
 | `npm ci` 说成功，但 `node_modules\electron\dist` 不存在 | postinstall 静默失败；构建脚本会用镜像自动补，也可手动 `node node_modules\electron\install.js` |
 | Electron / builder 二进制下载慢或失败 | 构建脚本自动「镜像 → 官方」换源；要强制就用 `--mirror=cn` / `--mirror=official` |
 | `npm run build:win:lite:dir` 只报 `node.exe 退出码 1` | 真正原因在完整日志里（常见 `connect ETIMEDOUT`）；把输出重定向到文件再查，别只看尾部 |
-| 构建产物里混着旧版本的 `.whisper` / `assets` | 构建前没删 `dist`，`win-unpacked` 被复用；先 `Remove-Item dist -Recurse -Force` |
+| 构建产物里混着旧版本的 `.whisper` / `assets` | 先 `Remove-Item dist -Recurse -Force` 再构建；实测 electron-builder 会重建 `app.asar.unpacked`，删 dist 只为排除干扰 |
 | 终端里 `•` / `✓` 变成 `鈥?` / `鉁?` | PowerShell 5.1 按 ANSI 解 electron-builder 的 UTF-8 输出；不影响构建，但 grep 会漏，改用 `Get-Content <log> -Encoding UTF8` |
 | PowerShell 执行策略禁 npm.ps1 | `cmd /c npm ...` 或 `node ...` |
 | PowerShell 5.1 改中文文件变乱码 | 用编辑器，不要 `Set-Content` |

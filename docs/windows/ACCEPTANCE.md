@@ -44,19 +44,7 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 
 本次验收环境：Windows 11 x64 / **node v24.22.2** / **npm 11.19.1**。
 
-依赖版本（`package-lock.json` 锁定值，详表与用途见 WINDOWS §2）：
-
-| 依赖 | 版本 |
-|---|---|
-| electron | 45.2.1 |
-| electron-builder | 26.18.0 |
-| @electron/asar | 3.4.1 |
-| kuromoji | 0.1.2 |
-| pixi.js / @pixi/unsafe-eval | 7.4.3 |
-| pixi-live2d-display-lipsyncpatch | 0.5.0-ls-8 |
-| adm-zip | 0.6.1 |
-| @polyglot-bundles/ja-jlpt-syllabi | 0.1.5 |
-| doublearray / zlibjs / async | 0.0.2 / 0.3.1 / 2.6.4 |
+依赖版本表见 [WINDOWS.md](WINDOWS.md) §2（本文不复制）。核对实际锁定值：
 
 ```powershell
 node -e "const l=require('./package-lock.json');for(const n of ['electron','electron-builder','kuromoji','pixi.js','adm-zip'])console.log(n.padEnd(18), l.packages['node_modules/'+n].version)"
@@ -137,7 +125,7 @@ skipped 数随本机资产变：`.whisper` 里有模型 / whisper-server 在跑�
 
 ## 5. 构建
 
-先清干净再构建（`win-unpacked` 会被复用，旧版本残留会让 §6 误判）：
+先清干净再构建（清 `dist` 只为排除干扰；实测 electron-builder 会重建 `app.asar.unpacked`）：
 
 ```powershell
 Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
@@ -158,8 +146,11 @@ node_modules\electron\dist 缺失时构建脚本会自动补（镜像 → 官方
 不下载 whisper，也不打包 .whisper
 ```
 
-即使本地已有 `node_modules\electron\dist`，electron-builder 通常仍会下载一次 electron zip；
-断网会 `connect ETIMEDOUT`，而脚本只抛「node.exe 退出码 1」——要看完整日志。
+electron-builder 用的是它自己那份 electron zip，和 `node_modules\electron\dist` 无关：
+首次构建会额外下约 158MB，之后缓存命中就不再联网。日志里的 `• downloaded label=electron`
+在缓存命中时也照打，别当成"每次都在下载"。
+
+断网且没缓存时会在 packaging 阶段 `connect ETIMEDOUT`，脚本只抛「node.exe 退出码 1」——要看完整日志。
 离线构建用：
 
 ```powershell
