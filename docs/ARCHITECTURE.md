@@ -527,4 +527,5 @@ DATA.md             数据文件 / schema / 备份
 DEV.md              测试 / scan / smoke
 BOUNDARIES.md       代码与测试边界
 windows/            Windows 安装、打包、验收
+mac/                mac 构建、分发、自检
 ```
