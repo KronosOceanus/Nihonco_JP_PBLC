@@ -1,4 +1,4 @@
-# Windows 构建与验收清单（v0.7.38）
+# Windows 构建与验收清单（v0.7.39）
 
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 > 安装、平台差异见 [WINDOWS.md](WINDOWS.md)。
@@ -26,7 +26,7 @@ git log --oneline -3
 确认：
 
 ```text
-v0.7.38
+v0.7.39
 ```
 
 ---
@@ -101,14 +101,14 @@ npm run smoke
 当前基线：
 
 ```text
-npm test       → 344（341 pass，3 skipped）
+npm test       → 350（347 pass，3 skipped）
 scan           → 全绿
 smoke          → 6 步
 smoke:settings → 通过
 ```
 
 skipped 数随本机资产变：`.whisper` 里有模型 / whisper-server 在跑时，
-运行时 ASR 契约那几条会真的执行（341→342→343 pass）。不是回归。
+运行时 ASR 契约那几条会真的执行（347→348→349 pass）。不是回归。
 
 ---
 

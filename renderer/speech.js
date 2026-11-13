@@ -54,7 +54,7 @@ async function checkServicesOnBoot() {
   if (assets && assets.missing) {
     console.log("[asr] 缺资产:", assets.missing);
     if (assets.missing === "engine") {
-      queueHint(assets.isWin ? "缺 Whisper 引擎\n设置 → 资源\n拖入 CPU 引擎 zip" : "缺 Whisper 运行时\n先跑 npm run setup:whisper", 9000);
+      queueHint(assets.isWin ? "缺 Whisper 引擎\n设置 → 资源\n拖入引擎 zip" : "缺 Whisper 运行时\n先跑 npm run setup:whisper", 9000);
     } else {
       queueHint(assets.isWin ? "缺 Whisper 模型\n设置 → 资源\n拖入 ggml-*.bin" : "缺 Whisper 模型\n先跑 npm run setup:whisper", 9000);
     }

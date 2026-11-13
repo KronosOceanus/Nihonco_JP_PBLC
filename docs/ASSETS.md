@@ -183,6 +183,9 @@ npm run setup:whisper
 → whisper.cpp + ggml-small-q5_1.bin
 ```
 
+源码和模型都会自动「镜像 → 官方」换源（`gh-proxy` / `hf-mirror` → GitHub / HuggingFace），
+`--mirror=cn` / `--mirror=official` 可强制单源。
+
 mac 可选：
 
 ```text

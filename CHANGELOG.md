@@ -11,6 +11,7 @@
 ### 修复
 
 - `check:assets:lite` 的提示按平台区分，mac 上不再打印 Windows 的说法
+- 首启 HUD 的「拖入 CPU 引擎 zip」改成「拖入引擎 zip」（CUDA 引擎同样适用）
 
 ### 测试
 
@@ -19,6 +20,8 @@
 ### 文档
 
 - Windows 文档补 Electron 二进制静默失败、镜像开关、构建前置
+- `NOTES.md` 记录下载源策略（为什么镜像优先、为什么看哈希而不是退出码）
+- `ARCHITECTURE.md` / `ASSETS.md` 补下载源说明
 
 ---
 

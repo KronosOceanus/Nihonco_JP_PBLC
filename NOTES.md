@@ -158,6 +158,46 @@ ok ──错──→ 打回 wrong
 
 ---
 
+## 下载源策略：镜像优先、官方兜底
+
+构建要下四样东西（whisper 源码、whisper 模型、Electron 二进制、electron-builder 二进制），
+原来全是单源写死：镜像挂或 GitHub 慢就整体卡死，而且没有任何提示。
+
+**现在的做法**（`tools/fetch.mjs`，仿 Go 的 `GOPROXY`）：
+
+```text
+--mirror=auto      镜像优先，失败回退官方（默认）
+--mirror=cn        只走镜像
+--mirror=official  只走官方
+（也可用 NIHONCO_MIRROR）
+```
+
+为什么这么定：
+
+- **必须有超时**：没有超时的"先镜像再回退"等于没做，死源会吊十分钟。每个源都有 `--max-time`。
+- **判定只看大小 + sha256，不看 curl 退出码**：curl 超时（28）时文件可能已经下完；反过来
+  退出码 0 也不代表内容对。源码包和模型都有钉死的哈希，换源下载因而没有风险。
+- **跨源续传是安全的**：镜像和官方是同一份字节，`-C -` 接着下没问题。
+- **npm 那条不碰**：npm 没有 registry 回退机制，`--registry` 只能给一个；硬写镜像对海外用户不友好，
+  所以在文档里写清楚，让用户自己选。
+
+实测（2026-11，国内网络）：
+
+```text
+Electron    npmmirror 2.13 MB/s   github 0.03 MB/s
+builder     npmmirror 1.75 MB/s   github 0.01 MB/s
+模型        hf-mirror 0.43 MB/s   huggingface 连不上
+源码        gh-proxy  0.07 MB/s   github 0.03 MB/s
+npm         npmmirror 6.95 MB/s   npmjs 1.30 MB/s
+```
+
+`ghfast.top` 已返回 403，不要加进候选。
+
+另一个坑：`npm ci` 的 postinstall **可能静默失败**——包装完了但 `node_modules/electron/dist`
+不存在，npm 不报错。所以 `build-app.mjs` 里有 `ensureElectron()`：缺了就按源顺序自己补。
+
+---
+
 ## 已知限制 / 待办
 
 - 双平台，前提不同：

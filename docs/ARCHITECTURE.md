@@ -459,6 +459,9 @@ npm run build:win:lite:nsis
 npm run build:win:lite:portable
 ```
 
+下载源：构建期间要下的二进制（Electron、electron-builder、whisper 源码/模型）统一走
+`tools/fetch.mjs`，默认「镜像 → 官方」顺序，`--mirror=cn|official` 可强制。
+
 不打包：
 
 ```text
