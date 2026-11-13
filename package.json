@@ -27,7 +27,8 @@
     "build:win:lite:portable": "node tools/build-app.mjs --target=win --mode=lite --format=portable",
     "setup:mlx": "node tools/setup-mlx.mjs",
     "smoke:settings": "node tools/settings-smoke.mjs",
-    "demo": "node tools/demo.mjs"
+    "demo": "node tools/demo.mjs",
+    "build:dist:mac": "node tools/build-dist-mac.mjs"
   },
   "keywords": [],
   "author": "KronosOceanus",

@@ -70,3 +70,4 @@ data/memory/
 
 # 内部临时文档
 tmp_*.md
+dist-mac/

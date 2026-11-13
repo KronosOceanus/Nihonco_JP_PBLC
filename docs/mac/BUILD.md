@@ -102,13 +102,25 @@ mac 与 Windows 的资产路径对照见 [../ASSETS.md](../ASSETS.md) §1。
 2. **VOICEVOX 或 AivisSpeech**（约 2GB，否则不发音）
 3. **LLM key**：启动后 设置 → LLM 填，写进 `~/Library/Application Support/Nihonco/data/.env`
 
-打包命令（去掉密钥、录音和进度）：
+打包命令：
 
 ```bash
-tar -czf Nihonco-mac-arm64-$(node -p "require('./package.json').version").tgz \
-  --exclude=.git --exclude=.voice --exclude=.env --exclude=dist \
-  .
+npm run build:dist:mac -- --verify
 ```
+
+脚本 `tools/build-dist-mac.mjs` 按**固定清单**拷贝（壳 + 代码 + 运行时依赖 + `.whisper`），
+缺一样直接报错停下，不会产出半成品；`--verify` 会真的启动一次，确认 `main.js` 跑得起来
+（这个坑踩过：漏拷 `main.js`，包能启动但主进程直接挂，终端还没有任何输出）。
+
+产物：
+
+```text
+dist-mac/Nihonco-mac-arm64-<版本>.tgz        约 348MB
+dist-mac/Nihonco-mac-arm64-<版本>.tgz.sha256
+```
+
+不带 `--verify` 就只组装不启动；`--no-tar` 只出目录。包里已排除 `model/`、`lib/`、`.env`、
+个人进度和 `node_modules` 里的 electron/electron-builder（约 259MB 构建期依赖）。
 
 对方是 Intel Mac 就别发了：产物是 arm64，跑不了。
 

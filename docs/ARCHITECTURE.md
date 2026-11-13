@@ -453,6 +453,7 @@ style-src 'self' 'unsafe-inline'
 ```text
 npm run build:app:lite
 npm run build:app:lite:mlx
+npm run build:dist:mac        # 组装 mac 分发包（tgz + sha256）
 npm run build:win:lite
 npm run build:win:lite:dir
 npm run build:win:lite:nsis

@@ -1,5 +1,20 @@
 # 更新日志
 
+## 未发布
+
+### 构建
+
+- 新增 `npm run build:dist:mac`：按固定清单组装 mac 分发包（`.app` + 代码 + 运行时依赖 + `.whisper`），
+  缺文件直接报错；`--verify` 会先启动一次确认 `main.js` 跑得起来，产物 `tgz + sha256`
+- 包里排除 Live2D 模型/Core、`.env`、个人进度，以及 `node_modules` 里的 electron/electron-builder（约 259MB）
+
+### 文档
+
+- 新增 `docs/mac/BUILD.md`：mac 构建前置、步骤、产物是壳、怎么分发、自检 6 条
+- README 构建段与文档地图补 mac 入口
+
+---
+
 ## v0.7.39 — 下载镜像优先、官方兜底
 
 ### 构建

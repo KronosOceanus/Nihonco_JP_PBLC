@@ -20,6 +20,7 @@
 | `npm run build:app` | mac lite（等同 `build:app:lite`） |
 | `npm run build:app:lite` | mac lite，不含 Live2D |
 | `npm run build:app:lite:mlx` | lite + mlx 环境/模型 |
+| `npm run build:dist:mac` | 组装 mac 分发包（tgz + sha256）；`--verify` 先启动校验 |
 | `npm run build:win` | Windows lite（NSIS + portable） |
 | `npm run build:win:lite:dir` | 只出目录，便于先试 |
 | `npm run check:assets:lite` | 打包前资产检查 |
