@@ -133,8 +133,13 @@ function info(root = ROOT) {
         id: "whispercpp", label: IS_WIN ? "whisper.cpp（CUDA / CPU，免 Python）" : "whisper.cpp（Metal，免 Python）",
         available: av.wcpp,
         hint: av.wcpp ? ""
-          : (!av.wcppBin ? "缺 .whisper/whisper-server：跑 npm run setup:whisper"
-                         : "缺模型：把 ggml-*.bin 放进 .whisper/models/"),
+          : (!av.wcppBin
+              ? (IS_WIN
+                  ? "缺 Whisper 引擎：设置 → 资源，拖入 CPU 或 CUDA 引擎 zip"
+                  : "缺 .whisper/whisper-server：跑 npm run setup:whisper")
+              : (IS_WIN
+                  ? "缺模型：设置 → 资源，拖入 ggml-*.bin"
+                  : "缺模型：把 ggml-*.bin 放进 .whisper/models/")),
       },
       {
         id: "mlx", label: "mlx-whisper（Apple GPU，需 Python）",

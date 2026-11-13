@@ -111,7 +111,7 @@ test("后端不可用时带 hint（告诉用户跑哪个命令）", () => {
   const i = mod.info(root);
   const cpp = i.backends.find((b) => b.id === "whispercpp");
   assert.equal(cpp.available, false);
-  assert.match(cpp.hint, /setup:whisper|models/);
+  assert.match(cpp.hint, /setup:whisper|models|资源|引擎|模型/);
 });
 
 test("info()：给每个后端算最小模型作为默认", () => {

@@ -1,4 +1,4 @@
-# Windows 构建与验收清单（v0.7.32）
+# Windows 构建与验收清单（v0.7.36）
 
 > 适用：Windows 10/11 x64，Node 18+，不需要 Python。
 > 安装、平台差异见 [WINDOWS.md](WINDOWS.md)。
@@ -26,7 +26,7 @@ git log --oneline -3
 确认：
 
 ```text
-v0.7.32
+v0.7.36
 ```
 
 ---
@@ -148,11 +148,13 @@ npx @electron/asar list dist\win-unpacked\resources\app.asar | findstr settings.
 
 ### 资源与 Live2D
 
+- [ ] 安装包/`win-unpacked` 里没有 `.whisper` 目录
+- [ ] 首次启动 ASR 未安装，设置 → 资源显示「缺 Whisper 引擎 / 缺模型」
 - [ ] 资源区 ASR 三行：CUDA 引擎、CPU 引擎、Whisper 模型
 - [ ] CUDA/CPU/模型状态能正确显示“已找到 / 未找到”
 - [ ] 下载 CUDA 按钮按驱动显示 12.4 / 11.8
 - [ ] CUDA / CPU / ASR `.bin` 拖入后写入对应目录（路径见 ASSETS）
-- [ ] 内置 `.whisper\models` 仍作为兜底
+- [ ] 只装引擎不装模型时仍不可用；补模型后 ASR 可用
 - [ ] 打包版拖入模型/Core → `%APPDATA%\Nihonco\assets`，无 `ENOTDIR`
 - [ ] 打包版拖入 TTS zip → `%APPDATA%\Nihonco\.voicevox` / `.aivis`
 - [ ] 缺少 Live2D 资产时提示明确，不崩

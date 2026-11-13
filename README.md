@@ -23,7 +23,7 @@
 - **振假名**：单词卡、例句卡上的汉字标读音（会話/解説回复不标）
 - **回显**：语音输入「上原文 / 下译文」；中文→日语可点开看振假名、也可以怎么说、复制/朗读
 - **点词查询**：气泡/例句里的日语词点一下看读音、原形、释义；词表外的词不处理
-- **语音**：本机 ASR（默认 whisper.cpp，mac 可选 mlx；Windows 默认 CPU、可选 CUDA）+ VOICEVOX / AivisSpeech 朗读
+- **语音**：本机 ASR（默认 whisper.cpp，mac 可选 mlx；Windows 用户安装 CPU 或 CUDA 引擎与模型）+ VOICEVOX / AivisSpeech 朗读
 - **窗口**：可拖拽改大小，位置/尺寸持久化
 
 ## 系统要求
@@ -34,7 +34,7 @@
 | 芯片 | Apple Silicon（M1+）；Intel 可源码运行 | x64 |
 | Node | 18+ | 18+ |
 | Python | 可选，3.13（mlx 需要；`npm run setup` 建 venv） | 不需要 |
-| 磁盘 | 预留 3GB；VOICEVOX 再加 2GB | 预留 4GB（Electron + whisper 模型 + VOICEVOX） |
+| 磁盘 | 预留 3GB；VOICEVOX 再加 2GB | 预留 2GB；Whisper 模型另约 181MB；VOICEVOX 再加 2GB |
 | 常驻内存 | 主进程 + kuromoji 约 350MB；VOICEVOX 约 2GB | 同左 |
 
 ## 快速开始
@@ -82,7 +82,8 @@ curl http://127.0.0.1:8765/health
 
 安装、GPU 加速包、打包与已知问题统一见 **[docs/windows/WINDOWS.md](docs/windows/WINDOWS.md)**。
 
-Windows 默认 **lite** 打包（不含 Live2D 模型/Core，用户放到 `%APPDATA%\Nihonco\assets`）。
+Windows 默认 **lite** 打包（不含 Live2D 模型/Core，也不含 Whisper 运行时和模型）。
+Live2D 放 `%APPDATA%\Nihonco\assets`；Whisper 引擎/模型首次启动后从设置 → 资源拖入。
 
 ### 构建
 
@@ -101,7 +102,7 @@ npm run build:win:lite:dir    # 只出目录，便于先试
 npm run build:win:lite:nsis
 ```
 
-只提供 lite 构建。所有构建都会先准备 whisper.cpp。
+只提供 lite 构建。mac 构建会先准备 whisper.cpp；Windows lite 不含 Whisper，需首次启动后拖入。  
 `--with-mlx` 只支持 macOS，Windows 没有 mlx。
 
 macOS 的 lite `.app` 是壳，运行时会指回项目根目录，不能单独把 `.app` 拖走；
@@ -155,7 +156,7 @@ Windows 的 lite 才是带资源目录的独立包。
 
 ## 已知限制
 
-- **平台前提**：Windows 默认 whisper.cpp CPU，可选 CUDA；CUDA 连续失败 3 次会回退 CPU。mac 可选 mlx。TTS 用 VOICEVOX 或 AivisSpeech；Windows 缺引擎时**不发音**（没有日语 SAPI）
+- **平台前提**：Windows 需自行安装 Whisper CPU 或 CUDA 引擎与模型（lite 不内置），CUDA 连续失败 3 次会回退 CPU。mac 可选 mlx。TTS 用 VOICEVOX 或 AivisSpeech；Windows 缺引擎时**不发音**（没有日语 SAPI）
 - **识别语言手动切**：选「日本語」时说中文会被当日语转写
 - **黄卡只属于「解説 + 日本語模式」**：会話不纠错；中国語模式不进入聊天/黄卡
 - **自由造句的语义判定依赖 LLM**，失败时按规则结果算

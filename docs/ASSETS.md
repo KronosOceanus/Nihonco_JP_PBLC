@@ -4,8 +4,8 @@ Nihonco 的资产分三类：
 
 ```text
 必须自备：Live2D 模型、Cubism Core、VOICEVOX / AivisSpeech
-安装包自带：Whisper CPU 运行时 + 小模型（Windows lite）
-可选外置：Whisper CUDA 引擎、用户自己的 Whisper 模型
+Windows 自备：Whisper CPU/CUDA 引擎 + 模型（lite 不再内置）
+可选外置：Whisper 模型、CUDA 引擎
 ```
 
 > 设置 → 资源 提供下载入口和拖放安装。
@@ -14,8 +14,8 @@ Nihonco 的资产分三类：
 > mac：Whisper 模型  
 > TTS：VOICEVOX / AivisSpeech 路径选择
 
-源码仓库不包含 Live2D 模型、Cubism Core、VOICEVOX、AivisSpeech。
-Windows lite 安装包会包含 **Whisper CPU 运行时和 `ggml-small-q5_1.bin`**，它们不属于 Live2D/TTS 资产。
+源码仓库不包含 Live2D 模型、Cubism Core、VOICEVOX、AivisSpeech、Whisper 运行时和模型。
+Windows lite 安装包**不带** Whisper；首次使用需拖入引擎和 `ggml-*.bin`。
 
 ---
 
@@ -28,15 +28,15 @@ Windows lite 安装包会包含 **Whisper CPU 运行时和 `ggml-small-q5_1.bin`
 | **mac 不打包**<br>`npm start` | 项目根 | 项目 `model/<名字>/` | 项目 `lib/live2dcubismcore.min.js` | 项目 `.whisper`；mlx 可选 `.venv` | 项目 `.voicevox` 或系统安装 | 项目根 `.env` | 项目 `data/` |
 | **mac lite**<br>`npm run build:app:lite` | `Nihonco.app` 是壳，指回项目根 | 不内置 | 不内置 | 项目 `.whisper` | 同上 | 项目根 `.env` | 项目 `data/` |
 | **Windows 不打包**<br>`npm start` | 项目根 | 项目 `model/<名字>/` | 项目 `lib/live2dcubismcore.min.js` | 项目 `.whisper` | 系统安装，二者其一 | 项目根 `.env` | 项目 `data/` |
-| **Windows lite**<br>`npm run build:win` | `resources/app.asar` | `%APPDATA%\Nihonco\assets\model\<名字>\` | `%APPDATA%\Nihonco\assets\lib\live2dcubismcore.min.js` | 包内 `app.asar.unpacked\.whisper` + 小模型 | 系统安装，不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
+| **Windows lite**<br>`npm run build:win` | `resources/app.asar` | `%APPDATA%\Nihonco\assets\model\<名字>\` | `%APPDATA%\Nihonco\assets\lib\live2dcubismcore.min.js` | 不内置；用户拖入 `%APPDATA%\Nihonco\asr` + `.whisper\models` | 系统安装，不随包 | `%APPDATA%\Nihonco\data\.env` | `%APPDATA%\Nihonco\data\` |
 
 补充：
 
 - `NIHONCO_ASSETS` 可以覆盖 lite 的外置资产目录；默认是 `%APPDATA%\Nihonco\assets`（mac 对应 `~/Library/Application Support/Nihonco/assets`）。
 - 设置页的「资产（当前写入）」显示实际写入根：开发是项目根，打包 lite 是 `userData/assets`。
-- Whisper 在 Windows lite 随包；VOICEVOX / AivisSpeech 不随包。
+- Windows lite 不内置 Whisper；首次使用需拖入 CPU/CUDA 引擎和 `ggml-*.bin`。
 - CUDA 是可选外置资产，放在 `%APPDATA%\Nihonco\asr\cuda-*`。
-- 用户 CPU 引擎放在 `%APPDATA%\Nihonco\asr\cpu`，优先于内置 CPU。
+- CPU 引擎放在 `%APPDATA%\Nihonco\asr\cpu`。
 
 ---
 
@@ -176,7 +176,7 @@ lib/live2dcubismcore.min.js
 
 ## 5. Whisper（语音识别）
 
-### 默认
+### mac
 
 ```text
 npm run setup:whisper
@@ -189,12 +189,18 @@ mac 可选：
 npm run setup:mlx
 ```
 
-Windows 默认：
+### Windows
+
+Windows lite **不内置** Whisper 运行时和模型。  
+首次使用从设置 → 资源拖入：
 
 ```text
-内置 CPU 运行时
-+ .whisper/models/ggml-small-q5_1.bin
+CPU 引擎 zip  → %APPDATA%\Nihonco\asr\cpu
+CUDA 引擎 zip → %APPDATA%\Nihonco\asr\cuda-*
+模型 .bin     → %APPDATA%\Nihonco\.whisper\models
 ```
+
+引擎和模型要分别安装；只装一个不够。
 
 ### 设置页
 
@@ -218,16 +224,10 @@ CUDA 下载按钮按驱动推荐 12.4 / 11.8；没有可用 NVIDIA 时禁用。
   .whisper/models/*.bin
 
 Windows lite：
-  运行时：app.asar.unpacked/.whisper
-  内置模型：app.asar.unpacked/.whisper/models
+  安装包：不包含 .whisper
+  CPU 引擎：%APPDATA%\Nihonco\asr\cpu
+  CUDA：    %APPDATA%\Nihonco\asr\cuda-12.4 / cuda-11.8
   用户模型：%APPDATA%\Nihonco\.whisper\models
-
-可选 CUDA：
-  %APPDATA%\Nihonco\asr\cuda-12.4
-  %APPDATA%\Nihonco\asr\cuda-11.8
-
-用户 CPU：
-  %APPDATA%\Nihonco\asr\cpu
 ```
 
 ### 实际引擎
@@ -285,7 +285,7 @@ Nihonco 只连接/启动本机引擎，不打包引擎或模型。
 
 ## 8. Windows 安装版资产位置
 
-Windows lite 不含 Live2D 模型/Core，但包含 Whisper CPU 运行时和小模型。
+Windows lite 不含 Live2D 模型/Core，也不含 Whisper 运行时和模型。
 
 用户需要放的：
 
@@ -300,6 +300,14 @@ Windows lite 不含 Live2D 模型/Core，但包含 Whisper CPU 运行时和小�
 │       └── ...
 └── lib\
     └── live2dcubismcore.min.js
+```
+
+Whisper 不放在 `assets`：
+
+```text
+%APPDATA%\Nihonco\asr\cpu\
+%APPDATA%\Nihonco\asr\cuda-*\
+%APPDATA%\Nihonco\.whisper\models\
 ```
 
 快速打开：
@@ -378,7 +386,7 @@ AIVIS_ENGINE=/path/to/AivisSpeech-Engine/run
 |---|---|---|
 | Live2D 模型 | 否 | 模型条款，通常禁止再分发素材 |
 | Cubism Core | 否 | Live2D 专有 SDK |
-| Whisper 模型 | Windows lite 随包小模型 | 用户可替换 |
+| Whisper 模型 | 否 | 用户下载/拖入 |
 | Whisper CUDA/CPU 引擎 | 否 | 用户下载/拖入 |
 | VOICEVOX | 否 | 用户安装，遵守软件规约 |
 | AivisSpeech | 否 | 用户安装，模型单独许可 |

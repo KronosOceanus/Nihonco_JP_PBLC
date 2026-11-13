@@ -170,10 +170,12 @@ main.js
 ```text
 开发 / 源码运行：项目根
 打包 asar：
-  WHISPER_HOME      = resources/app.asar.unpacked/.whisper
   ASR 用户模型      = userData/.whisper/models
-  CUDA / CPU 引擎   = userData/asr/<id>
+  CPU / CUDA 引擎   = userData/asr/<id>
   data / .env       = userData/data
+
+Windows lite 不再内置 .whisper；WHISPER_HOME 仍指向
+resources/app.asar.unpacked/.whisper，但该目录不存在，运行时只看用户引擎/模型。
 ```
 
 ---
@@ -264,8 +266,9 @@ Windows：whisper.cpp
 Windows 默认：
 
 ```text
-内置 CPU 版 whisper-server.exe
-+ .whisper/models/ggml-small-q5_1.bin
+不内置 Whisper 运行时/模型
+首次启动后拖入 CPU 或 CUDA 引擎
++ userData/.whisper/models/*.bin
 ```
 
 可选 CUDA：
@@ -470,7 +473,15 @@ Windows lite 包含：
 ```text
 Electron
 app.asar
-app.asar.unpacked/.whisper（CPU 运行时 + 小模型）
+data/*.json（app.asar.unpacked）
+```
+
+不包含：
+
+```text
+.whisper/（Whisper 运行时/模型由用户拖入）
+Live2D / Cubism Core
+VOICEVOX / AivisSpeech
 ```
 
 打包白名单：

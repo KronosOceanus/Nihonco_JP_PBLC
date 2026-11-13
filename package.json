@@ -71,13 +71,6 @@
       "data/patterns-n2.json",
       "data/patterns-n1.json",
       "data/enrich-cache.seed.json",
-      ".whisper/whisper-server",
-      ".whisper/whisper-server.exe",
-      ".whisper/whisper.dll",
-      ".whisper/ggml.dll",
-      ".whisper/ggml-base.dll",
-      ".whisper/ggml-cpu-*.dll",
-      ".whisper/models/ggml-small-q5_1.bin",
       "!**/*.map",
       "!tests/**",
       "!tools/**",
@@ -91,8 +84,7 @@
     ],
     "asar": true,
     "asarUnpack": [
-      "data/*.json",
-      ".whisper/**"
+      "data/*.json"
     ],
     "mac": {
       "icon": "assets/AppIcon.icns"

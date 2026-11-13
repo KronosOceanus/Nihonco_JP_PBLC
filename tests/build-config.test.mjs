@@ -13,6 +13,12 @@ test("lite 配置不打包 model / lib", () => {
   assert.ok(!(build.asarUnpack || []).includes("model/**"));
 });
 
+test("Windows lite 不打包 .whisper 运行时和模型", () => {
+  const files = build.files || [];
+  assert.ok(!files.some((f) => f.startsWith(".whisper")), "build.files 不应包含 .whisper");
+  assert.ok(!(build.asarUnpack || []).some((f) => f.startsWith(".whisper")), "asarUnpack 不应包含 .whisper");
+});
+
 test("只提供 lite 构建命令，产物名带 lite", () => {
   const scripts = pkg.scripts || {};
   assert.equal(scripts["build:app"], "node tools/build-app.mjs --target=mac --mode=lite");

@@ -70,7 +70,7 @@ function buildMac() {
 
 function buildWin() {
   run(process.execPath, [path.join(ROOT, "tools/check-assets.mjs"), "--lite"]);
-  run(process.execPath, [path.join(ROOT, "tools/setup-whisper.mjs")]);
+  console.log("\nWindows lite 不含 Whisper 运行时和模型；首次启动后从设置 → 资源拖入 CPU/CUDA 引擎 + ggml 模型。");
   const targetArgs = dir
     ? ["--win", "--x64", "--dir"]
     : ["--win", ...(format ? [format] : []), "--x64"];

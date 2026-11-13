@@ -40,8 +40,9 @@ function log(...a) { console.log('[asr]', ...a); }
  *   asr/active.json            {"backend":"cuda-12.4"}  ← 记住上次能用的
  *   asr/cuda-12.4/whisper-server.exe + *.dll            ← 用户下的 GPU 版
  *   asr/cuda-11.8/...
- * CPU 版固定在内置位置（打包后 app.asar.unpacked/.whisper，开发期 ROOT/.whisper），
- * 模型也只在内置位置放一份，GPU 版共用它（省 181MB 重复）。
+ *   asr/cpu/whisper-server.exe + *.dll                  ← 用户拖入的 CPU 版（优先）
+ * 内置 CPU 位置（打包后 app.asar.unpacked/.whisper，开发期 ROOT/.whisper）仅作兜底；
+ * Windows lite 不再内置，模型默认放 userData/.whisper/models，GPU/CPU 共用。
  */
 const ASR_DIR = process.env.NIHONCO_ASR_DIR || '';
 const GPU_BACKEND_IDS = ['cuda-12.4', 'cuda-11.8'];

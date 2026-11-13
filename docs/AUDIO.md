@@ -73,22 +73,23 @@ Windows 只显示实际引擎；mac 没有 CUDA 选项。
 
 ---
 
-## 3. Windows：默认 CPU，可选 CUDA
+## 3. Windows：用户安装 CPU 或 CUDA
 
 ### 默认
 
-Windows lite 自带：
+Windows lite **不自带** Whisper。首次使用从设置 → 资源拖入：
 
 ```text
-CPU 版 whisper-server.exe + DLL
-.whisper/models/ggml-small-q5_1.bin
+CPU 引擎 zip → %APPDATA%\Nihonco\asr\cpu
+CUDA 引擎 zip → %APPDATA%\Nihonco\asr\cuda-*
+模型 .bin → %APPDATA%\Nihonco\.whisper\models
 ```
 
 默认：
 
 ```text
 backend = whisper.cpp
-engine  = cpu
+engine  = cpu（装了 CPU 引擎后）
 ```
 
 ### 可选 CUDA

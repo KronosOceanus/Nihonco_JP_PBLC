@@ -1,6 +1,6 @@
 # Windows 安装与打包
 
-> 当前版本：**v0.7.32**
+> 当前版本：**v0.7.36**
 >
 > 本项目只提供 **lite** 构建。构建/验收清单见 [ACCEPTANCE.md](ACCEPTANCE.md)。
 
@@ -27,7 +27,7 @@ TTS：VOICEVOX / AivisSpeech（外部引擎）
 | 系统 | Windows 10/11 x64 |
 | Node | 18+（实测 24 LTS） |
 | Python | 不需要 |
-| 磁盘 | 至少 4GB；VOICEVOX 另加约 2GB |
+| 磁盘 | 至少 2GB；Whisper 模型另约 181MB；VOICEVOX 另加约 2GB |
 | 显卡 | 无要求；NVIDIA 可选 CUDA |
 
 国内镜像：
@@ -46,53 +46,80 @@ git clone https://github.com/KronosOceanus/Nihonco_JP.git
 cd Nihonco_JP
 npm ci
 npm run setup
-npm run setup:whisper
 # 编辑 .env，填 LLM_API_KEY
 npm start
 ```
+
+源码模式要语音识别，按第 4 节准备 Whisper 引擎和模型；只打包不需要。  
+Windows lite 安装包本身**不含** Whisper 运行时和模型。
 
 ---
 
 ## 4. ASR
 
-### 默认：CPU
+### Windows lite 不含 ASR 资源
 
-Windows lite 默认包含：
+Windows lite 安装包**不包含**：
 
 ```text
-app.asar.unpacked/.whisper/whisper-server.exe
+whisper-server.exe
+whisper.dll / ggml*.dll
+ggml-small-q5_1.bin
+```
+
+首次启动时桌宠、TTS、LLM、单词/句型都正常，但语音识别不可用。  
+设置 → 资源会显示「缺 Whisper 引擎 / 缺模型」。
+
+### 安装 CPU 引擎
+
+从设置 → 资源拖入 CPU 引擎 zip：
+
+```text
+whisper-server.exe
 whisper.dll
-ggml.dll / ggml-base.dll
+ggml.dll
+ggml-base.dll
 ggml-cpu-*.dll
-.whisper/models/ggml-small-q5_1.bin
 ```
 
-默认：
+安装到：
 
 ```text
-backend = whisper.cpp
-engine  = cpu
+%APPDATA%\Nihonco\asr\cpu
 ```
 
-### 可选：CUDA
+### 安装 CUDA 引擎（可选）
 
 ```text
-设置 → 资源 → ASR
-  [下载 Whisper 引擎（CUDA 12.4 版）]
-  [下载 Whisper 引擎（CPU 版）]
-  [下载 Whisper 模型]
+whisper-server.exe
+ggml-cuda.dll
+cudart64_*.dll
 ```
 
-按钮按驱动推荐 12.4 / 11.8；没有可用 NVIDIA 时 CUDA 禁用。
-
-也可以直接拖 zip：
+安装到：
 
 ```text
-CUDA zip → %APPDATA%\Nihonco\asr\cuda-12.4 / cuda-11.8
-CPU zip  → %APPDATA%\Nihonco\asr\cpu
+%APPDATA%\Nihonco\asr\cuda-12.4
+%APPDATA%\Nihonco\asr\cuda-11.8
 ```
 
-安装前停 ASR，安装后重启。
+按驱动推荐 12.4 / 11.8；没有可用 NVIDIA 时 CUDA 禁用。
+
+### 安装模型
+
+拖入任意 `ggml-*.bin`：
+
+```text
+%APPDATA%\Nihonco\.whisper\models
+```
+
+推荐：
+
+```text
+ggml-small-q5_1.bin（约 181MB）
+```
+
+安装前停 ASR，安装后自动重启。引擎和模型要**分别安装**，只装一个不够。
 
 ### 实际引擎
 
@@ -109,14 +136,14 @@ CUDA 连续失败 3 次后回退 CPU，界面显示 CPU 和原因。
 ### 路径
 
 ```text
-内置 CPU 运行时：app.asar.unpacked/.whisper
-内置模型：      app.asar.unpacked/.whisper/models
-用户模型：      %APPDATA%\Nihonco\.whisper\models
-CUDA：          %APPDATA%\Nihonco\asr\cuda-*
-用户 CPU：      %APPDATA%\Nihonco\asr\cpu
+CPU 引擎：  %APPDATA%\Nihonco\asr\cpu
+CUDA：      %APPDATA%\Nihonco\asr\cuda-*
+用户模型：  %APPDATA%\Nihonco\.whisper\models
 ```
 
-`%APPDATA%\Nihonco\asr\cpu` 优先于内置 CPU。
+`app.asar.unpacked\.whisper` 在 Windows lite 中不存在；不要按旧文档往里放文件。
+
+源码 `npm start` 的路径不同：用户数据默认在项目 `.electron-data`，模型默认在项目 `.whisper/models`；设置里拖入仍然可用。
 
 ---
 
@@ -198,6 +225,9 @@ npm run build:win:lite:nsis
 npm run build:win:lite:portable
 ```
 
+Windows lite 不再执行 `setup-whisper`：不下载模型，也不打包 `.whisper`。  
+首次启动后从设置 → 资源拖入引擎和模型。
+
 别名：
 
 ```text
@@ -223,7 +253,6 @@ win-unpacked/
 └── resources\
     ├── app.asar
     └── app.asar.unpacked\
-        ├── .whisper\
         └── data\
 
 %APPDATA%\Nihonco\
@@ -231,14 +260,15 @@ win-unpacked/
 ├── assets\
 ├── .voicevox\
 ├── .aivis\
-├── .whisper\
-└── asr\
+├── .whisper\        ← 用户拖入的模型
+└── asr\             ← 用户拖入的 CPU / CUDA 引擎
 ```
 
 原则：
 
 ```text
 asar 只读
+Windows lite 不带 .whisper 运行时/模型
 运行时可写全部在 %APPDATA%\Nihonco
 ```
 
